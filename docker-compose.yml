@@ -24,8 +24,8 @@ services:
   # API Gateway - Single entry point for all services
   api-gateway:
     build:
-      context: ./tec-api-gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./tec-api-gateway/Dockerfile
     container_name: tec-api-gateway
     environment:
       PORT: 3000

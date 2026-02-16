@@ -92,23 +92,23 @@ docker-compose up -d
 | POST | `/api/auth/refresh` | Refresh access token |
 | GET | `/api/auth/me` | Get current user |
 
-### Wallet Service (`/api/wallet/*`)
+### Wallet Service (`/api/wallets/*`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/wallet/wallets?userId={id}` | Get user wallets |
-| POST | `/api/wallet/wallets/link` | Link new wallet |
-| GET | `/api/wallet/wallets/{id}/balance` | Get wallet balance |
-| GET | `/api/wallet/wallets/{id}/transactions` | Get transactions (paginated) |
+| GET | `/api/wallets?userId={id}` | Get user wallets |
+| POST | `/api/wallets/link` | Link new wallet |
+| GET | `/api/wallets/{id}/balance` | Get wallet balance |
+| GET | `/api/wallets/{id}/transactions` | Get transactions (paginated) |
 
-### Payment Service (`/api/payment/*`)
+### Payment Service (`/api/payments/*`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/payment/payments/create` | Create payment |
-| POST | `/api/payment/payments/approve` | Approve payment |
-| POST | `/api/payment/payments/complete` | Complete payment |
-| GET | `/api/payment/payments/{id}/status` | Get payment status |
+| POST | `/api/payments/create` | Create payment |
+| POST | `/api/payments/approve` | Approve payment |
+| POST | `/api/payments/complete` | Complete payment |
+| GET | `/api/payments/{id}/status` | Get payment status |
 
 ## 🛠️ Tech Stack
 

@@ -42,15 +42,15 @@ router.use(
   createProxyMiddleware(createProxyOptions(AUTH_SERVICE_URL))
 );
 
-// Wallet Service routes: /api/wallet/*
+// Wallet Service routes: /api/wallets/*
 router.use(
-  '/wallet',
+  '/wallets',
   createProxyMiddleware(createProxyOptions(WALLET_SERVICE_URL))
 );
 
-// Payment Service routes: /api/payment/*
+// Payment Service routes: /api/payments/*
 router.use(
-  '/payment',
+  '/payments',
   createProxyMiddleware(createProxyOptions(PAYMENT_SERVICE_URL))
 );
 

@@ -3,7 +3,6 @@ import { validationResult } from 'express-validator';
 import { hashPassword, comparePassword } from '../utils/hash';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import { prisma } from '../config/database';
-import { v4 as uuidv4 } from 'uuid';
 
 // Register a new user
 export const register = async (req: Request, res: Response): Promise<void> => {
