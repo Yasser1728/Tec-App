@@ -1,0 +1,187 @@
+name: TEC CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Lint API Gateway
+        working-directory: ./tec-api-gateway
+        run: |
+          npm ci
+          npm run lint
+
+      - name: Lint Auth Service
+        working-directory: ./tec-auth-service
+        run: |
+          npm ci
+          npm run lint
+
+      - name: Lint Wallet Service
+        working-directory: ./tec-wallet-service
+        run: |
+          npm ci
+          npm run lint
+
+      - name: Lint Payment Service
+        working-directory: ./tec-payment-service
+        run: |
+          npm ci
+          npm run lint
+
+  test-backend:
+    name: Test Backend Services
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  build-services:
+    name: Build Backend Services
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build API Gateway
+        working-directory: ./tec-api-gateway
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Auth Service
+        working-directory: ./tec-auth-service
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Wallet Service
+        working-directory: ./tec-wallet-service
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Payment Service
+        working-directory: ./tec-payment-service
+        run: |
+          npm ci
+          npm run build
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./tec-frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: tec-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js
+        run: npm run build
+        env:
+          NEXT_PUBLIC_PI_SDK: ${{ secrets.NEXT_PUBLIC_PI_SDK || 'https://sdk.minepi.com/pi-sdk.js' }}
+
+  docker-build:
+    name: Validate Docker Builds
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API Gateway Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./tec-api-gateway/Dockerfile
+          push: false
+          tags: tec-api-gateway:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Auth Service Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./tec-auth-service/Dockerfile
+          push: false
+          tags: tec-auth-service:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Wallet Service Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./tec-wallet-service/Dockerfile
+          push: false
+          tags: tec-wallet-service:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Payment Service Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./tec-payment-service/Dockerfile
+          push: false
+          tags: tec-payment-service:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
