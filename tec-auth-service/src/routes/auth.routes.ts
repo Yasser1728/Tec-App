@@ -12,6 +12,9 @@ import { authenticateToken } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// Note: Rate limiting is handled at the API Gateway level
+// All requests to this service go through the gateway which has centralized rate limiting
+
 // Public routes
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
