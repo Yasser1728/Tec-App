@@ -1,0 +1,182 @@
+// Prisma schema for TEC Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - Core authentication and profile
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  username      String         @unique
+  password_hash String
+  kyc_status    String         @default("pending") // pending, verified, rejected
+  role          String         @default("user")    // user, admin
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+  
+  // Relations
+  sessions      Session[]
+  wallets       Wallet[]
+  payments      Payment[]
+  subscriptions Subscription[]
+  devices       Device[]
+  
+  @@map("users")
+}
+
+// Session model - JWT session tracking
+model Session {
+  id          String   @id @default(uuid())
+  user_id     String
+  device      String?
+  ip_address  String?
+  token       String   @unique
+  expires_at  DateTime
+  created_at  DateTime @default(now())
+  
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([token])
+  @@index([expires_at])
+  @@map("sessions")
+}
+
+// Wallet model - Multi-wallet support (Pi/Crypto/Fiat)
+model Wallet {
+  id             String        @id @default(uuid())
+  user_id        String
+  wallet_address String?       @unique
+  wallet_type    String        // pi, crypto, fiat
+  balance        Decimal       @default(0) @db.Decimal(20, 8)
+  currency       String        @default("PI") // PI, BTC, ETH, USD, etc.
+  is_primary     Boolean       @default(false)
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+  
+  // Relations
+  user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  
+  @@index([user_id])
+  @@index([wallet_address])
+  @@map("wallets")
+}
+
+// Transaction model - Transaction history
+model Transaction {
+  id         String   @id @default(uuid())
+  wallet_id  String
+  type       String   // deposit, withdrawal, transfer, payment
+  amount     Decimal  @db.Decimal(20, 8)
+  currency   String
+  status     String   @default("pending") // pending, completed, failed
+  tx_hash    String?  @unique
+  from_addr  String?
+  to_addr    String?
+  memo       String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  
+  // Relations
+  wallet Wallet @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
+  
+  @@index([wallet_id])
+  @@index([tx_hash])
+  @@index([status])
+  @@index([created_at])
+  @@map("transactions")
+}
+
+// Payment model - Three-stage payment workflow
+model Payment {
+  id             String   @id @default(uuid())
+  user_id        String
+  amount         Decimal  @db.Decimal(20, 8)
+  currency       String   @default("PI")
+  status         String   @default("created") // created, approved, completed, failed, cancelled
+  payment_method String   // pi, card, wallet
+  pi_payment_id  String?  @unique
+  metadata       Json?
+  created_at     DateTime @default(now())
+  approved_at    DateTime?
+  completed_at   DateTime?
+  updated_at     DateTime @updatedAt
+  
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([pi_payment_id])
+  @@index([status])
+  @@index([created_at])
+  @@map("payments")
+}
+
+// Plan model - Subscription plans
+model Plan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("PI")
+  features    Json     // Array of features
+  duration    Int      @default(30) // Duration in days
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  // Relations
+  subscriptions Subscription[]
+  
+  @@map("plans")
+}
+
+// Subscription model - User subscriptions
+model Subscription {
+  id         String    @id @default(uuid())
+  user_id    String
+  plan_id    String
+  status     String    @default("active") // active, cancelled, expired
+  start_date DateTime  @default(now())
+  end_date   DateTime
+  auto_renew Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [plan_id], references: [id])
+  
+  @@index([user_id])
+  @@index([plan_id])
+  @@index([status])
+  @@index([end_date])
+  @@map("subscriptions")
+}
+
+// Device model - Trusted device management
+model Device {
+  id          String   @id @default(uuid())
+  user_id     String
+  device_name String
+  device_type String?  // mobile, desktop, tablet
+  user_agent  String?
+  last_login  DateTime @default(now())
+  trusted     Boolean  @default(false)
+  created_at  DateTime @default(now())
+  
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([trusted])
+  @@map("devices")
+}

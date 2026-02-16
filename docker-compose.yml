@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: tec-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: tec_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tec-network
+
+  # API Gateway - Single entry point for all services
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./tec-api-gateway/Dockerfile
+    container_name: tec-api-gateway
+    environment:
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-production}
+      AUTH_SERVICE_URL: http://auth-service:5001
+      WALLET_SERVICE_URL: http://wallet-service:5002
+      PAYMENT_SERVICE_URL: http://payment-service:5003
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - wallet-service
+      - payment-service
+    networks:
+      - tec-network
+    restart: unless-stopped
+
+  # Auth Service - User authentication and JWT management
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./tec-auth-service/Dockerfile
+    container_name: tec-auth-service
+    environment:
+      PORT: 5001
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/tec_db
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - see .env.example}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required - see .env.example}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tec-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node dist/index.js
+      "
+
+  # Wallet Service - Multi-wallet management
+  wallet-service:
+    build:
+      context: .
+      dockerfile: ./tec-wallet-service/Dockerfile
+    container_name: tec-wallet-service
+    environment:
+      PORT: 5002
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/tec_db
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tec-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node dist/index.js
+      "
+
+  # Payment Service - Multi-method payment processing
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./tec-payment-service/Dockerfile
+    container_name: tec-payment-service
+    environment:
+      PORT: 5003
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/tec_db
+      PI_API_KEY: ${PI_API_KEY:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tec-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node dist/index.js
+      "
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  tec-network:
+    driver: bridge
