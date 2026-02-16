@@ -1,0 +1,244 @@
+.container {
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.title {
+  font-size: 36px;
+  font-weight: 300;
+  margin-bottom: 8px;
+  color: var(--white);
+}
+
+.subtitle {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.currentBadge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.badgeLabel {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.badgeValue {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.plansGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.planCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  transition: all 0.3s ease;
+}
+
+.planCard:hover {
+  border-color: var(--gold-dim);
+  transform: translateY(-4px);
+}
+
+.planCardActive {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.05), rgba(201, 168, 76, 0.02));
+}
+
+.planHeader {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.planName {
+  font-size: 24px;
+  font-weight: 300;
+  margin-bottom: 12px;
+  color: var(--white);
+}
+
+.planPrice {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.priceAmount {
+  font-size: 48px;
+  font-weight: 300;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.priceCurrency {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.planDescription {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.featureList {
+  list-style: none;
+  margin-bottom: 24px;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--white);
+}
+
+.featureIcon {
+  color: var(--gold);
+  font-weight: bold;
+}
+
+.planActions {
+  margin-top: auto;
+}
+
+.subscribeBtn {
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--white);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.subscribeBtn:hover {
+  background: var(--dark);
+  border-color: var(--gold-dim);
+}
+
+.subscribeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upgradebtn {
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  border-color: var(--gold);
+  color: var(--black);
+  font-weight: 500;
+}
+
+.upgradebtn:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+}
+
+.currentPlanLabel {
+  text-align: center;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.2), rgba(201, 168, 76, 0.1));
+  border-radius: 8px;
+  color: var(--gold);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.paymentHistory {
+  margin-bottom: 48px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 300;
+  margin-bottom: 24px;
+  color: var(--white);
+}
+
+.historyTable {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  padding: 16px 24px;
+  background: var(--dark);
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.emptyState {
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.emptyText {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.billingInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+}
+
+.infoCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.infoTitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+
+.infoValue {
+  font-size: 24px;
+  font-weight: 300;
+}
+
+.active {
+  color: var(--success);
+}
+
+.inactive {
+  color: var(--muted);
+}
