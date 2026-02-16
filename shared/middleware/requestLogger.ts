@@ -13,7 +13,7 @@ export function requestLogger(serviceName: string) {
     const requestId = (req.headers['x-request-id'] as string) || uuidv4();
     
     // Attach request ID to request object for use in other middleware
-    (req as any).requestId = requestId;
+    (req as Request & { requestId: string }).requestId = requestId;
     
     // Set request ID in response header
     res.setHeader('X-Request-ID', requestId);

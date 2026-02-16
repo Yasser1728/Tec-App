@@ -8,6 +8,9 @@ WORKDIR /app
 # Copy Prisma schema
 COPY ./prisma ./prisma
 
+# Copy shared utilities
+COPY ./shared ./shared
+
 # Copy package files
 COPY tec-wallet-service/package*.json ./
 
@@ -36,6 +39,10 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy Prisma schema and generate client
 COPY ./prisma ./prisma
+
+# Copy shared utilities (for future use)
+COPY ./shared ./shared
+
 RUN npx prisma generate
 
 # Copy built files from builder

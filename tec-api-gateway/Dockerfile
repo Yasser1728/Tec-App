@@ -5,6 +5,9 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Copy shared utilities
+COPY ./shared ./shared
+
 # Copy package files
 COPY tec-api-gateway/package*.json ./
 
@@ -27,6 +30,9 @@ COPY tec-api-gateway/package*.json ./
 
 # Install only production dependencies
 RUN npm ci --only=production && npm cache clean --force
+
+# Copy shared utilities (for future use)
+COPY ./shared ./shared
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
