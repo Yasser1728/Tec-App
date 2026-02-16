@@ -95,7 +95,14 @@ class Logger {
  * Create a logger instance for a service
  */
 export function createLogger(serviceName: string): Logger {
-  const logLevel = (process.env.LOG_LEVEL?.toLowerCase() as LogLevel) || LogLevel.INFO;
+  const envLogLevel = process.env.LOG_LEVEL?.toLowerCase();
+  
+  // Validate log level against enum values
+  const validLevels = Object.values(LogLevel);
+  const logLevel = (envLogLevel && validLevels.includes(envLogLevel as LogLevel))
+    ? (envLogLevel as LogLevel)
+    : LogLevel.INFO;
+  
   return new Logger(serviceName, logLevel);
 }
 

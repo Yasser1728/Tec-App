@@ -19,6 +19,22 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001'
 const WALLET_SERVICE_URL = process.env.WALLET_SERVICE_URL || 'http://localhost:5002';
 const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:5003';
 
+// Types for health check
+interface ServiceStatus {
+  status: 'ok' | 'error';
+  version?: string;
+  message?: string;
+}
+
+interface HealthResponse {
+  status: 'ok' | 'degraded';
+  service: string;
+  timestamp: string;
+  uptime: number;
+  version: string;
+  services: Record<string, ServiceStatus>;
+}
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
@@ -36,7 +52,7 @@ app.use(rateLimiter);
 app.get('/health', async (req, res) => {
   const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
   
-  const healthResponse: any = {
+  const healthResponse: HealthResponse = {
     status: 'ok',
     service: 'api-gateway',
     timestamp: new Date().toISOString(),
@@ -75,10 +91,11 @@ app.get('/health', async (req, res) => {
             message: `HTTP ${response.status}`,
           };
         }
-      } catch (error: any) {
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Connection failed';
         healthResponse.services[service.name] = {
           status: 'error',
-          message: error.message || 'Connection failed',
+          message: errorMessage,
         };
       }
     })
@@ -86,7 +103,7 @@ app.get('/health', async (req, res) => {
 
   // Overall status is 'degraded' if any service is down
   const anyServiceDown = Object.values(healthResponse.services).some(
-    (s: any) => s.status === 'error'
+    (s) => s.status === 'error'
   );
   if (anyServiceDown) {
     healthResponse.status = 'degraded';
