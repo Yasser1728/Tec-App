@@ -1,0 +1,47 @@
+.loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.loadingSpinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: rotate-slow 0.8s linear infinite; }
+.page { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.sidebar { background: var(--dark); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 32px 0; position: sticky; top: 0; height: 100vh; }
+.sidebarLogo { padding: 0 24px 32px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.logoText { font-family: 'Cormorant Garamond', serif; font-size: 28px; }
+.nav { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
+.navItem { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: transparent; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; width: 100%; }
+.navItem:hover { color: var(--white); background: var(--surface); }
+.navItemActive { color: var(--gold); background: rgba(201,168,76,0.08); }
+.logoutBtn { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: transparent; border: none; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; cursor: pointer; transition: color 0.2s; font-family: 'DM Sans', sans-serif; width: 100%; }
+.logoutBtn:hover { color: var(--error); }
+.main { padding: 40px; overflow-y: auto; }
+.header { margin-bottom: 40px; }
+.welcomeBanner { background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.25); color: var(--gold); padding: 10px 16px; font-size: 13px; margin-bottom: 24px; display: inline-block; }
+.headerRow { display: flex; align-items: flex-start; justify-content: space-between; }
+.greeting { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.username { font-family: 'Cormorant Garamond', serif; font-size: 32px; display: flex; align-items: center; gap: 12px; }
+.roleBadge { font-family: 'DM Sans', sans-serif; font-size: 11px; padding: 3px 10px; border: 1px solid var(--gold-dim); color: var(--gold); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 400; }
+.planBadge { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+.statsGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); margin-bottom: 40px; border: 1px solid var(--border); }
+.statCard { background: var(--surface); padding: 24px; display: flex; flex-direction: column; gap: 4px; }
+.statLabel { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.statValue { font-family: 'Cormorant Garamond', serif; font-size: 28px; }
+.statSub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.appsSection {}
+.sectionHeader { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
+.sectionTitle { font-size: 22px; }
+.sectionMeta  { font-size: 12px; color: var(--muted); }
+.appsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.appCard { background: var(--surface); padding: 20px; display: flex; align-items: center; gap: 12px; transition: background 0.2s; cursor: pointer; }
+.appCard:hover { background: #16161f; }
+.appCardActive { background: rgba(201,168,76,0.06); }
+.appInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.appName   { font-size: 14px; color: var(--white); }
+.appDomain { font-size: 10px; color: var(--muted); }
+.appLive { font-size: 9px; padding: 2px 8px; background: rgba(46,204,113,0.15); color: var(--success); border: 1px solid rgba(46,204,113,0.3); letter-spacing: 0.08em; text-transform: uppercase; flex-shrink: 0; }
+.appSoon { font-size: 9px; padding: 2px 8px; background: rgba(107,107,122,0.15); color: var(--muted); border: 1px solid var(--border); flex-shrink: 0; }
+@media (max-width: 900px) {
+  .page { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  .main { padding: 24px 16px; }
+}
+@media (max-width: 500px) {
+  .statsGrid { grid-template-columns: 1fr; }
+}
