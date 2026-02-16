@@ -45,11 +45,14 @@ export const createAppToUserPayment = async (config: PaymentConfig): Promise<Pay
         onReadyForServerApproval: async (paymentId: string) => {
           console.log('📋 Payment ready for approval:', paymentId);
           try {
-            await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/approve`, {
+            const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/approve`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ paymentId }),
             });
+            if (!response.ok) {
+              console.error('❌ Server approval failed with status:', response.status);
+            }
           } catch (err) {
             console.error('❌ Server approval failed:', err);
           }
@@ -57,11 +60,16 @@ export const createAppToUserPayment = async (config: PaymentConfig): Promise<Pay
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
           console.log('✅ Payment completing:', paymentId, txid);
           try {
-            await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/complete`, {
+            const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/complete`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ paymentId, txid }),
             });
+            if (!response.ok) {
+              console.error('❌ Server completion failed with status:', response.status);
+              resolve({ success: false, error: 'Server completion failed' });
+              return;
+            }
             resolve({ success: true, paymentId, txid });
           } catch (err) {
             console.error('❌ Server completion failed:', err);

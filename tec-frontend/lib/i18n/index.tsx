@@ -26,6 +26,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('tec_locale') as Locale;
     if (saved && (saved === 'en' || saved === 'ar')) {
       setLocaleState(saved);
+    } else if (saved) {
+      // Invalid locale value, clear it and use default
+      console.warn(`Invalid locale "${saved}" found in localStorage. Using default locale "en".`);
+      localStorage.removeItem('tec_locale');
     }
   }, []);
 

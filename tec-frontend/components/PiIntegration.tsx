@@ -88,10 +88,6 @@ export default function PiIntegration() {
                 ❌ {t.dashboard.piIntegration.paymentFailed}: {result.error}
               </div>
             )}
-
-            <div className={styles.mainnetIndicator}>
-              🌐 {t.dashboard.piIntegration.mainnetMode}
-            </div>
           </>
         )}
       </div>
