@@ -1,0 +1,18 @@
+{
+  "version": 3,
+  "name": "tec-frontend",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/$1" }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://api.yourdomain.com",
+    "NEXT_PUBLIC_PI_SANDBOX": "true",
+    "NEXT_PUBLIC_APP_NAME": "TEC"
+  }
+}
