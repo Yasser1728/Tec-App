@@ -90,8 +90,8 @@ describe('Logger', () => {
       logger.info('Test message', { userId: '123', requestId: 'abc' });
 
       const loggedData = JSON.parse((console.info as jest.Mock).mock.calls[0][0]);
-      expect(loggedData.userId).toBe('123');
-      expect(loggedData.requestId).toBe('abc');
+      expect(loggedData.metadata?.userId).toBe('123');
+      expect(loggedData.metadata?.requestId).toBe('abc');
     });
 
     it('should include error stack in error logs', () => {
