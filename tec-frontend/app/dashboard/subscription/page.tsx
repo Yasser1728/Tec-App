@@ -103,7 +103,7 @@ export default function SubscriptionPage() {
                   <div className={styles.currentPlanLabel}>Active Plan</div>
                 ) : (
                   <button
-                    className={`${styles.subscribeBtn} ${isUpgrade ? styles.upgradebtn : ''}`}
+                    className={`${styles.subscribeBtn} ${isUpgrade ? styles.upgradeBtn : ''}`}
                     onClick={() => handleSubscribe(plan.name)}
                     disabled={loading}
                   >

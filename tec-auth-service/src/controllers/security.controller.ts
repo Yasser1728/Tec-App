@@ -192,13 +192,24 @@ export const verify2fa = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    if (!twoFa.secret) {
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: '2FA secret is missing',
+        },
+      });
+      return;
+    }
+
     // Verify TOTP code
-    const result = verifySync({
+    const verificationResult = verifySync({
       token: code,
       secret: twoFa.secret,
     });
 
-    if (!result.valid) {
+    if (!verificationResult.valid) {
       res.status(400).json({
         success: false,
         error: {

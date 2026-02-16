@@ -150,14 +150,14 @@
   cursor: not-allowed;
 }
 
-.upgradebtn {
+.upgradeBtn {
   background: linear-gradient(135deg, var(--gold-dim), var(--gold));
   border-color: var(--gold);
   color: var(--black);
   font-weight: 500;
 }
 
-.upgradebtn:hover {
+.upgradeBtn:hover {
   background: linear-gradient(135deg, var(--gold), var(--gold-dim));
 }
 
