@@ -1,20 +1,18 @@
-import type { Metadata } from 'next';
+'use client';
+
 import Script from 'next/script';
+import { LocaleProvider } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 import './globals.css';
 
-export const metadata: Metadata = {
-  title: 'TEC App — The Elite Consortium',
-  description: 'بوابتك إلى منظومة TEC — 24 تطبيق في عالم واحد',
-};
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const { locale, dir } = useTranslation();
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang={locale} dir={dir}>
       <head>
+        <title>TEC App — The Elite Consortium</title>
+        <meta name="description" content="A complete ecosystem of 24 apps built on Pi Network" />
         <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
         <Script id="pi-init" strategy="beforeInteractive">
           {`Pi.init({ version: "2.0", sandbox: ${process.env.NODE_ENV !== 'production'} });`}
@@ -22,5 +20,17 @@ export default function RootLayout({
       </head>
       <body>{children}</body>
     </html>
+  );
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <LocaleProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </LocaleProvider>
   );
 }
