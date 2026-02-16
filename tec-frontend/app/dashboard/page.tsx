@@ -1,10 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { usePiAuth } from '@/hooks/usePiAuth';
 import { useTranslation } from '@/lib/i18n';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import PiIntegration from '@/components/PiIntegration';
 import styles from './dashboard.module.css';
 
@@ -35,108 +32,68 @@ const TEC_APPS = [
 ];
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, isLoading, logout, isNewUser } = usePiAuth();
+  const { user, isNewUser } = usePiAuth();
   const { t } = useTranslation();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) router.push('/');
-  }, [isAuthenticated, isLoading, router]);
-
-  const handleLogout = () => { logout(); router.push('/'); };
-
-  if (isLoading || !user) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.loadingSpinner} />
-      </div>
-    );
-  }
 
   return (
-    <div className={styles.page}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarLogo}>
-          <span className={`gold-text ${styles.logoText}`}>{t.common.appName}</span>
-        </div>
-        <nav className={styles.nav}>
-          {[
-            { icon: '⊞', label: t.dashboard.nav.dashboard, active: true },
-            { icon: '◎', label: t.dashboard.nav.wallet,   active: false },
-            { icon: '◈', label: t.dashboard.nav.subscription,  active: false },
-            { icon: '◇', label: t.dashboard.nav.security,    active: false },
-          ].map(item => (
-            <button key={item.label} className={`${styles.navItem} ${item.active ? styles.navItemActive : ''}`}>
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-        <div style={{ padding: '0 16px', marginTop: 'auto', marginBottom: '16px' }}>
-          <LanguageSwitcher />
-        </div>
-        <button className={styles.logoutBtn} onClick={handleLogout}>⟵ {t.common.logout}</button>
-      </aside>
-
-      <main className={styles.main}>
-        <header className={styles.header}>
-          {isNewUser && <div className={`${styles.welcomeBanner} fade-up`}>{t.dashboard.welcomeNew}</div>}
-          <div className={styles.headerRow}>
-            <div>
-              <p className={styles.greeting}>{t.dashboard.greeting}</p>
-              <h1 className={styles.username}>
-                @{user.piUsername}
-                <span className={styles.roleBadge}>{user.role}</span>
-              </h1>
-            </div>
-            <div className={styles.planBadge}>◈ {user.subscriptionPlan || 'Free'}</div>
+    <>
+      <header className={styles.header}>
+        {isNewUser && <div className={`${styles.welcomeBanner} fade-up`}>{t.dashboard.welcomeNew}</div>}
+        <div className={styles.headerRow}>
+          <div>
+            <p className={styles.greeting}>{t.dashboard.greeting}</p>
+            <h1 className={styles.username}>
+              @{user?.piUsername}
+              <span className={styles.roleBadge}>{user?.role}</span>
+            </h1>
           </div>
-        </header>
-
-        <div className={`${styles.statsGrid} fade-up-1`}>
-          {[
-            { label: t.dashboard.stats.piBalance,            value: '0.00 π',                    sub: t.dashboard.stats.tecWallet },
-            { label: t.dashboard.stats.availableApps,  value: '1 / 24',                   sub: t.dashboard.stats.activeApp },
-            { label: t.dashboard.stats.subscription,           value: user.subscriptionPlan || 'Free', sub: t.dashboard.stats.upgradePro },
-            { label: t.dashboard.stats.kyc,               value: 'Pending',                   sub: t.dashboard.stats.identityVerification },
-          ].map(s => (
-            <div key={s.label} className={styles.statCard}>
-              <p className={styles.statLabel}>{s.label}</p>
-              <p className={`${styles.statValue} gold-text`}>{s.value}</p>
-              <p className={styles.statSub}>{s.sub}</p>
-            </div>
-          ))}
+          <div className={styles.planBadge}>◈ {user?.subscriptionPlan || 'Free'}</div>
         </div>
+      </header>
 
-        <PiIntegration />
-
-        <section className={`${styles.appsSection} fade-up-2`}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>{t.dashboard.appsTitle}</h2>
-            <span className={styles.sectionMeta}>{t.dashboard.appsCount}</span>
+      <div className={`${styles.statsGrid} fade-up-1`}>
+        {[
+          { label: t.dashboard.stats.piBalance,            value: '0.00 π',                    sub: t.dashboard.stats.tecWallet },
+          { label: t.dashboard.stats.availableApps,  value: '1 / 24',                   sub: t.dashboard.stats.activeApp },
+          { label: t.dashboard.stats.subscription,           value: user?.subscriptionPlan || 'Free', sub: t.dashboard.stats.upgradePro },
+          { label: t.dashboard.stats.kyc,               value: 'Pending',                   sub: t.dashboard.stats.identityVerification },
+        ].map(s => (
+          <div key={s.label} className={styles.statCard}>
+            <p className={styles.statLabel}>{s.label}</p>
+            <p className={`${styles.statValue} gold-text`}>{s.value}</p>
+            <p className={styles.statSub}>{s.sub}</p>
           </div>
-          <div className={styles.appsGrid}>
-            <div className={`${styles.appCard} ${styles.appCardActive}`}>
-              <span style={{fontSize:'20px'}}>🔷</span>
+        ))}
+      </div>
+
+      <PiIntegration />
+
+      <section className={`${styles.appsSection} fade-up-2`}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>{t.dashboard.appsTitle}</h2>
+          <span className={styles.sectionMeta}>{t.dashboard.appsCount}</span>
+        </div>
+        <div className={styles.appsGrid}>
+          <div className={`${styles.appCard} ${styles.appCardActive}`}>
+            <span style={{fontSize:'20px'}}>🔷</span>
+            <div className={styles.appInfo}>
+              <span className={styles.appName}>{t.common.appName}</span>
+              <span className={styles.appDomain}>tec.pi</span>
+            </div>
+            <span className={styles.appLive}>{t.common.live}</span>
+          </div>
+          {TEC_APPS.map(app => (
+            <div key={app.name} className={styles.appCard}>
+              <span style={{fontSize:'20px'}}>{app.emoji}</span>
               <div className={styles.appInfo}>
-                <span className={styles.appName}>{t.common.appName}</span>
-                <span className={styles.appDomain}>tec.pi</span>
+                <span className={styles.appName}>{app.name}</span>
+                <span className={styles.appDomain}>{app.domain}</span>
               </div>
-              <span className={styles.appLive}>{t.common.live}</span>
+              <span className={styles.appSoon}>{t.common.comingSoon}</span>
             </div>
-            {TEC_APPS.map(app => (
-              <div key={app.name} className={styles.appCard}>
-                <span style={{fontSize:'20px'}}>{app.emoji}</span>
-                <div className={styles.appInfo}>
-                  <span className={styles.appName}>{app.name}</span>
-                  <span className={styles.appDomain}>{app.domain}</span>
-                </div>
-                <span className={styles.appSoon}>{t.common.comingSoon}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
+          ))}
+        </div>
+      </section>
+    </>
   );
 }

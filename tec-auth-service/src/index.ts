@@ -3,6 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
+import subscriptionRoutes from './routes/subscription.routes';
+import kycRoutes from './routes/kyc.routes';
+import securityRoutes from './routes/security.routes';
+import profileRoutes from './routes/profile.routes';
 
 dotenv.config();
 
@@ -40,6 +44,10 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/subscriptions', subscriptionRoutes);
+app.use('/kyc', kycRoutes);
+app.use('/security', securityRoutes);
+app.use('/profile', profileRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

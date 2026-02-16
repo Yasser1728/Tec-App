@@ -1,0 +1,303 @@
+.container {
+  padding: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.title {
+  font-size: 36px;
+  font-weight: 300;
+  margin-bottom: 8px;
+  color: var(--white);
+}
+
+.subtitle {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.statusBadge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.statusNone {
+  background: rgba(107, 107, 122, 0.2);
+  color: var(--muted);
+}
+
+.statusPending {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.statusVerified {
+  background: rgba(46, 204, 113, 0.2);
+  color: var(--success);
+}
+
+.statusRejected {
+  background: rgba(231, 76, 60, 0.2);
+  color: var(--error);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 48px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepNumber {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dark);
+  border: 2px solid var(--border);
+  color: var(--muted);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.stepActive .stepNumber {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--black);
+}
+
+.stepComplete .stepNumber {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--white);
+}
+
+.stepLabel {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.stepActive .stepLabel,
+.stepComplete .stepLabel {
+  color: var(--white);
+}
+
+.stepLine {
+  width: 80px;
+  height: 2px;
+  background: var(--border);
+  margin: 0 16px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.formSection {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.formTitle {
+  font-size: 20px;
+  font-weight: 300;
+  margin-bottom: 24px;
+  color: var(--white);
+}
+
+.formGroup {
+  margin-bottom: 24px;
+}
+
+.formGroup:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--white);
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--white);
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--gold-dim);
+}
+
+.uploadBox {
+  margin-top: 24px;
+  padding: 48px 24px;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.uploadBox:hover {
+  border-color: var(--gold-dim);
+  background: rgba(201, 168, 76, 0.05);
+}
+
+.uploadIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.uploadText {
+  font-size: 16px;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+
+.uploadHint {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.fileInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.submitBtn {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  border: none;
+  border-radius: 8px;
+  color: var(--black);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submitBtn:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  transform: translateY(-2px);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.statusCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 48px;
+  text-align: center;
+}
+
+.statusCardSuccess {
+  border-color: var(--success);
+  background: rgba(46, 204, 113, 0.05);
+}
+
+.statusCardError {
+  border-color: var(--error);
+  background: rgba(231, 76, 60, 0.05);
+}
+
+.statusIcon {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.statusTitle {
+  font-size: 24px;
+  font-weight: 300;
+  margin-bottom: 16px;
+  color: var(--white);
+}
+
+.statusText {
+  font-size: 16px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.retryBtn {
+  margin-top: 24px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--white);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retryBtn:hover {
+  border-color: var(--gold-dim);
+  background: var(--dark);
+}
+
+.infoBox {
+  background: rgba(201, 168, 76, 0.05);
+  border: 1px solid var(--gold-dim);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 32px;
+}
+
+.infoTitle {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: var(--gold);
+}
+
+.infoText {
+  font-size: 14px;
+  color: var(--white);
+  line-height: 1.6;
+}
