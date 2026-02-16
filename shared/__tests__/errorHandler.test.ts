@@ -21,10 +21,14 @@ describe('errorHandler middleware', () => {
     
     // Suppress console.error in tests
     jest.spyOn(console, 'error').mockImplementation();
+    
+    // Set NODE_ENV to production by default to avoid stack traces
+    process.env.NODE_ENV = 'production';
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
+    delete process.env.NODE_ENV;
   });
 
   it('should handle AppError with custom properties', () => {

@@ -4,16 +4,23 @@ describe('Logger', () => {
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+    
     // Spy on console methods
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
     jest.spyOn(console, 'info').mockImplementation();
     jest.spyOn(console, 'debug').mockImplementation();
+    
+    // Clear any environment variables that might affect logging
+    delete process.env.LOG_LEVEL;
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
+    delete process.env.LOG_LEVEL;
   });
 
   describe('createLogger', () => {
@@ -57,6 +64,10 @@ describe('Logger', () => {
     });
 
     it('should log debug messages', () => {
+      // Set LOG_LEVEL to DEBUG to enable debug logging BEFORE creating the logger
+      const originalLevel = process.env.LOG_LEVEL;
+      process.env.LOG_LEVEL = 'debug';
+      
       const logger = createLogger('test-service');
       logger.debug('Debug message');
 
@@ -65,6 +76,13 @@ describe('Logger', () => {
       expect(loggedData.service).toBe('test-service');
       expect(loggedData.level).toBe('debug');
       expect(loggedData.message).toBe('Debug message');
+      
+      // Restore original level
+      if (originalLevel) {
+        process.env.LOG_LEVEL = originalLevel;
+      } else {
+        delete process.env.LOG_LEVEL;
+      }
     });
 
     it('should include metadata in logs', () => {
@@ -87,8 +105,10 @@ describe('Logger', () => {
     });
 
     it('should respect log level filtering', () => {
-      // Set LOG_LEVEL to WARN
-      process.env.LOG_LEVEL = 'WARN';
+      // Set LOG_LEVEL to warn BEFORE creating the logger
+      const originalLevel = process.env.LOG_LEVEL;
+      process.env.LOG_LEVEL = 'warn';
+      
       const logger = createLogger('test-service');
 
       logger.info('Info message');
@@ -104,7 +124,12 @@ describe('Logger', () => {
       expect(console.warn).toHaveBeenCalled();
       expect(console.error).toHaveBeenCalled();
 
-      delete process.env.LOG_LEVEL;
+      // Restore original level
+      if (originalLevel) {
+        process.env.LOG_LEVEL = originalLevel;
+      } else {
+        delete process.env.LOG_LEVEL;
+      }
     });
   });
 });

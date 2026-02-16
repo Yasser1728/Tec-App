@@ -95,7 +95,7 @@ class Logger {
  * Create a logger instance for a service
  */
 export function createLogger(serviceName: string): Logger {
-  const logLevel = (process.env.LOG_LEVEL?.toUpperCase() as LogLevel) || LogLevel.INFO;
+  const logLevel = (process.env.LOG_LEVEL?.toLowerCase() as LogLevel) || LogLevel.INFO;
   return new Logger(serviceName, logLevel);
 }
 
