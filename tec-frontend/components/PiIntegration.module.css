@@ -1,0 +1,155 @@
+.container {
+  width: 100%;
+  margin-top: 32px;
+}
+
+.card {
+  background: linear-gradient(135deg, rgba(0, 20, 30, 0.95), rgba(10, 30, 40, 0.9));
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #00ffcc, #00ff88) 1;
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00ffcc, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnConnect {
+  background: linear-gradient(135deg, #00ffcc, #00ff88);
+  color: #000;
+}
+
+.btnConnect:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 255, 204, 0.3);
+}
+
+.btnTest {
+  background: rgba(100, 100, 100, 0.3);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btnTest:hover:not(:disabled) {
+  background: rgba(120, 120, 120, 0.4);
+  transform: translateY(-2px);
+}
+
+.btnPay {
+  background: linear-gradient(135deg, #ff00ff, #ff0080);
+  color: #fff;
+}
+
+.btnPay:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 0, 255, 0.3);
+}
+
+.authenticated {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 255, 136, 0.1);
+  border-radius: 8px;
+  color: #fff;
+}
+
+.checkmark {
+  font-size: 20px;
+}
+
+.authenticated strong {
+  color: #00ff88;
+}
+
+.mainnetIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(0, 255, 204, 0.1);
+  border-left: 4px solid #00ffcc;
+  border-radius: 4px;
+  color: #00ffcc;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.buttonGroup .btn {
+  flex: 1;
+  min-width: 200px;
+}
+
+.success {
+  padding: 16px;
+  background: rgba(0, 255, 136, 0.15);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 8px;
+  color: #00ff88;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error {
+  padding: 16px;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 24px;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+  }
+
+  .buttonGroup .btn {
+    width: 100%;
+  }
+}

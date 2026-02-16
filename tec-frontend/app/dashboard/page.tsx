@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { usePiAuth } from '@/hooks/usePiAuth';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import PiIntegration from '@/components/PiIntegration';
 import styles from './dashboard.module.css';
 
 const TEC_APPS = [
@@ -106,6 +107,8 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        <PiIntegration />
 
         <section className={`${styles.appsSection} fade-up-2`}>
           <div className={styles.sectionHeader}>
