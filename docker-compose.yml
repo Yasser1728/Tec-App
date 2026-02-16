@@ -48,8 +48,8 @@ services:
     environment:
       - PORT=5001
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tec_db
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
-      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+      - JWT_SECRET=${JWT_SECRET:-please-set-jwt-secret-in-env}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-please-set-refresh-secret-in-env}
       - NODE_ENV=production
     ports:
       - "5001:5001"
@@ -87,7 +87,7 @@ services:
     environment:
       - PORT=5003
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tec_db
-      - PI_API_KEY=your-pi-api-key
+      - PI_API_KEY=${PI_API_KEY:-please-set-pi-api-key-in-env}
       - NODE_ENV=production
     ports:
       - "5003:5003"
