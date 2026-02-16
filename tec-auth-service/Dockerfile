@@ -6,16 +6,16 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy Prisma schema
-COPY ../../prisma ./prisma
+COPY ./prisma ./prisma
 
 # Copy package files
-COPY package*.json ./
+COPY tec-auth-service/package*.json ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy source code
-COPY . .
+COPY tec-auth-service/ .
 
 # Generate Prisma Client
 RUN npx prisma generate
@@ -29,13 +29,13 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY tec-auth-service/package*.json ./
 
 # Install only production dependencies
 RUN npm ci --only=production && npm cache clean --force
 
 # Copy Prisma schema and generate client
-COPY ../../prisma ./prisma
+COPY ./prisma ./prisma
 RUN npx prisma generate
 
 # Copy built files from builder
