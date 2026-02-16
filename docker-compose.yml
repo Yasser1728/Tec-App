@@ -4,9 +4,9 @@ services:
     image: postgres:15-alpine
     container_name: tec-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tec_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Please set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-tec_db}
     ports:
       - "5432:5432"
     volumes:
@@ -47,9 +47,9 @@ services:
     container_name: tec-auth-service
     environment:
       - PORT=5001
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tec_db
-      - JWT_SECRET=${JWT_SECRET:-please-set-jwt-secret-in-env}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-please-set-refresh-secret-in-env}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Please set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-tec_db}
+      - JWT_SECRET=${JWT_SECRET:?Please set JWT_SECRET in .env}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Please set JWT_REFRESH_SECRET in .env}
       - NODE_ENV=production
     ports:
       - "5001:5001"
@@ -68,7 +68,7 @@ services:
     container_name: tec-wallet-service
     environment:
       - PORT=5002
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tec_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Please set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-tec_db}
       - NODE_ENV=production
     ports:
       - "5002:5002"
@@ -86,8 +86,8 @@ services:
     container_name: tec-payment-service
     environment:
       - PORT=5003
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tec_db
-      - PI_API_KEY=${PI_API_KEY:-please-set-pi-api-key-in-env}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Please set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-tec_db}
+      - PI_API_KEY=${PI_API_KEY:?Please set PI_API_KEY in .env}
       - NODE_ENV=production
     ports:
       - "5003:5003"
