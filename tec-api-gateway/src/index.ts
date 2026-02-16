@@ -11,6 +11,13 @@ dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
+const SERVICE_VERSION = process.env.SERVICE_VERSION || '1.0.0';
+const serviceStartTime = Date.now();
+
+// Downstream service URLs
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
+const WALLET_SERVICE_URL = process.env.WALLET_SERVICE_URL || 'http://localhost:5002';
+const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:5003';
 
 // Security middleware
 app.use(helmet());
@@ -25,13 +32,67 @@ app.use(morgan('combined'));
 // Rate limiting
 app.use(rateLimiter);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
+// Health check with downstream service status
+app.get('/health', async (req, res) => {
+  const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
+  
+  const healthResponse: any = {
+    status: 'ok',
     service: 'api-gateway',
-  });
+    timestamp: new Date().toISOString(),
+    uptime,
+    version: SERVICE_VERSION,
+    services: {},
+  };
+
+  // Check downstream services
+  const services = [
+    { name: 'auth-service', url: `${AUTH_SERVICE_URL}/health` },
+    { name: 'wallet-service', url: `${WALLET_SERVICE_URL}/health` },
+    { name: 'payment-service', url: `${PAYMENT_SERVICE_URL}/health` },
+  ];
+
+  await Promise.all(
+    services.map(async (service) => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
+        const response = await fetch(service.url, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          healthResponse.services[service.name] = {
+            status: 'ok',
+            version: data.version || 'unknown',
+          };
+        } else {
+          healthResponse.services[service.name] = {
+            status: 'error',
+            message: `HTTP ${response.status}`,
+          };
+        }
+      } catch (error: any) {
+        healthResponse.services[service.name] = {
+          status: 'error',
+          message: error.message || 'Connection failed',
+        };
+      }
+    })
+  );
+
+  // Overall status is 'degraded' if any service is down
+  const anyServiceDown = Object.values(healthResponse.services).some(
+    (s: any) => s.status === 'error'
+  );
+  if (anyServiceDown) {
+    healthResponse.status = 'degraded';
+  }
+
+  res.json(healthResponse);
 });
 
 // API routes - proxy to microservices
@@ -62,9 +123,9 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 app.listen(PORT, () => {
   console.log(`🚀 API Gateway running on port ${PORT}`);
-  console.log(`📡 Auth Service: ${process.env.AUTH_SERVICE_URL}`);
-  console.log(`💰 Wallet Service: ${process.env.WALLET_SERVICE_URL}`);
-  console.log(`💳 Payment Service: ${process.env.PAYMENT_SERVICE_URL}`);
+  console.log(`📡 Auth Service: ${AUTH_SERVICE_URL}`);
+  console.log(`💰 Wallet Service: ${WALLET_SERVICE_URL}`);
+  console.log(`💳 Payment Service: ${PAYMENT_SERVICE_URL}`);
 });
 
 export default app;

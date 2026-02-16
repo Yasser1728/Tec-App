@@ -8,6 +8,8 @@ dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5002;
+const SERVICE_VERSION = process.env.SERVICE_VERSION || '1.0.0';
+const serviceStartTime = Date.now();
 
 // Security middleware
 app.use(helmet());
@@ -22,10 +24,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
+  const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
   res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
+    status: 'ok',
     service: 'wallet-service',
+    timestamp: new Date().toISOString(),
+    uptime,
+    version: SERVICE_VERSION,
   });
 });
 
