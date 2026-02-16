@@ -3,10 +3,13 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePiAuth } from '@/hooks/usePiAuth';
+import { useTranslation } from '@/lib/i18n';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import styles from './page.module.css';
 
 export default function HomePage() {
   const { isAuthenticated, isLoading, error, login, isPiBrowserEnv } = usePiAuth();
+  const { t } = useTranslation();
   const router = useRouter();
 
   useEffect(() => {
@@ -21,12 +24,12 @@ export default function HomePage() {
   };
 
   const apps = [
-    { name: 'Nexus',    desc: 'بوابة الـ 24 App' },
-    { name: 'Commerce', desc: 'التجارة الرقمية' },
-    { name: 'Assets',   desc: 'الأصول الرقمية' },
-    { name: 'Fundx',    desc: 'التمويل والاستثمار' },
-    { name: 'Estate',   desc: 'العقارات الرقمية' },
-    { name: 'Analytics',desc: 'تحليل البيانات' },
+    { name: 'Nexus' },
+    { name: 'Commerce' },
+    { name: 'Assets' },
+    { name: 'Fundx' },
+    { name: 'Estate' },
+    { name: 'Analytics' },
   ];
 
   return (
@@ -37,22 +40,26 @@ export default function HomePage() {
         <div className={styles.bgGrid} />
       </div>
 
+      <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 100 }}>
+        <LanguageSwitcher />
+      </div>
+
       <section className={styles.hero}>
         <div className={`${styles.badge} fade-up`}>
           <span className={styles.badgeDot} />
-          Pi Network Ecosystem
+          {t.common.piEcosystem}
         </div>
 
         <h1 className={`${styles.title} fade-up-1`}>
-          <span className="gold-text">TEC</span>
+          <span className="gold-text">{t.common.appName}</span>
           <br />
-          <span className={styles.titleSub}>The Elite Consortium</span>
+          <span className={styles.titleSub}>{t.common.tagline}</span>
         </h1>
 
         <p className={`${styles.desc} fade-up-2`}>
-          منظومة متكاملة من 24 تطبيق مبنية على Pi Network
+          {t.home.description}
           <br />
-          هوية واحدة — محفظة واحدة — عالم كامل
+          {t.home.subDescription}
         </p>
 
         <div className={`${styles.ctaWrap} fade-up-3`}>
@@ -60,16 +67,16 @@ export default function HomePage() {
             <div className={styles.warningBox}>
               <span>⚠️</span>
               <div>
-                <p className={styles.warningTitle}>يجب فتح التطبيق داخل Pi Browser</p>
-                <p className={styles.warningText}>افتح tec.pi من داخل تطبيق Pi Network</p>
+                <p className={styles.warningTitle}>{t.home.warningTitle}</p>
+                <p className={styles.warningText}>{t.home.warningText}</p>
               </div>
             </div>
           ) : (
             <button className={`btn-gold ${styles.loginBtn}`} onClick={handleLogin} disabled={isLoading}>
               {isLoading ? (
-                <><span className={styles.spinner} />جاري التحقق...</>
+                <><span className={styles.spinner} />{t.common.loading}</>
               ) : (
-                <>π تسجيل الدخول بـ Pi</>
+                <>π {t.common.login}</>
               )}
             </button>
           )}
@@ -78,9 +85,9 @@ export default function HomePage() {
 
         <div className={`${styles.stats} fade-up-4`}>
           {[
-            { num: '24',   label: 'تطبيق' },
-            { num: '47M+', label: 'مستخدم Pi' },
-            { num: '1',    label: 'هوية موحدة' },
+            { num: '24',   label: t.home.stats.apps },
+            { num: '47M+', label: t.home.stats.piUsers },
+            { num: '1',    label: t.home.stats.identity },
           ].map(s => (
             <div key={s.label} className={styles.stat}>
               <span className={`${styles.statNum} gold-text`}>{s.num}</span>
@@ -91,26 +98,26 @@ export default function HomePage() {
       </section>
 
       <section className={styles.appsSection}>
-        <p className={styles.sectionLabel}>المنظومة</p>
-        <h2 className={styles.sectionTitle}>24 تطبيق — <span className="gold-text">عالم واحد</span></h2>
+        <p className={styles.sectionLabel}>{t.home.ecosystem}</p>
+        <h2 className={styles.sectionTitle}>{t.home.ecosystemTitle.split('—')[0]}— <span className="gold-text">{t.home.ecosystemTitle.split('—')[1]}</span></h2>
         <div className={styles.appsGrid}>
           {apps.map((app, i) => (
             <div key={app.name} className={styles.appCard} style={{ animationDelay: `${i * 0.07}s` }}>
               <span className={styles.appName}>{app.name}</span>
-              <span className={styles.appDesc}>{app.desc}</span>
+              <span className={styles.appDesc}>{t.apps[app.name as keyof typeof t.apps]}</span>
               <span className={styles.appDomain}>{app.name.toLowerCase()}.pi</span>
             </div>
           ))}
           <div className={`${styles.appCard} ${styles.appCardMore}`}>
             <span className={styles.moreNum}>+18</span>
-            <span className={styles.appDesc}>تطبيق آخر</span>
+            <span className={styles.appDesc}>{t.home.moreApps}</span>
           </div>
         </div>
       </section>
 
       <footer className={styles.footer}>
-        <span className="gold-text" style={{ fontFamily: 'Cormorant Garamond', fontSize: '18px' }}>TEC</span>
-        <span className={styles.footerText}>© 2025 The Elite Consortium</span>
+        <span className="gold-text" style={{ fontFamily: 'Cormorant Garamond', fontSize: '18px' }}>{t.common.appName}</span>
+        <span className={styles.footerText}>© 2025 {t.common.tagline}</span>
       </footer>
     </main>
   );
