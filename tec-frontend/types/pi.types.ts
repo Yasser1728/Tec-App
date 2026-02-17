@@ -26,3 +26,27 @@ export interface TecAuthResponse {
     refreshToken: string;
   };
 }
+
+// Pi Payment Data
+export interface PiPaymentData {
+  amount: number;
+  memo: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface PiPaymentCallbacks {
+  onReadyForServerApproval: (paymentId: string) => void;
+  onReadyForServerCompletion: (paymentId: string, txid: string) => void;
+  onCancel: (paymentId: string) => void;
+  onError: (error: Error, payment?: unknown) => void;
+}
+
+export type PaymentStatus = 'idle' | 'pending' | 'approved' | 'completing' | 'completed' | 'cancelled' | 'error';
+
+export interface PaymentState {
+  status: PaymentStatus;
+  paymentId: string | null;
+  txid: string | null;
+  error: string | null;
+  amount: number;
+}

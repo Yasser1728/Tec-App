@@ -11,7 +11,7 @@ export enum LogLevel {
 }
 
 interface LogMetadata {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface LogEntry {
@@ -49,7 +49,7 @@ class Logger {
       level,
       service: this.serviceName,
       message,
-      ...metadata,
+      metadata,
     };
 
     if (error && error.stack) {

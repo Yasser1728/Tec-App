@@ -23,15 +23,30 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/health', (req, res) => {
-  const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
-  res.json({
-    status: 'ok',
-    service: 'payment-service',
-    timestamp: new Date().toISOString(),
-    uptime,
-    version: SERVICE_VERSION,
-  });
+app.get('/health', (_req, res) => {
+  try {
+    const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
+    const healthResponse: {
+      status: string;
+      service: string;
+      timestamp: string;
+      uptime: number;
+      version: string;
+    } = {
+      status: 'ok',
+      service: 'payment-service',
+      timestamp: new Date().toISOString(),
+      uptime,
+      version: SERVICE_VERSION,
+    };
+    res.json(healthResponse);
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      service: 'payment-service',
+      message: error instanceof Error ? error.message : 'Health check failed',
+    });
+  }
 });
 
 // Routes

@@ -6,7 +6,7 @@ const PAYMENT_SERVICE_URL = process.env.NEXT_PUBLIC_PAYMENT_SERVICE_URL || 'http
 export interface PaymentConfig {
   amount: number;
   memo: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PaymentResult {
@@ -80,7 +80,7 @@ export const createAppToUserPayment = async (config: PaymentConfig): Promise<Pay
           console.log('❌ Payment cancelled');
           resolve({ success: false, error: 'Payment cancelled by user' });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
           console.error('💥 Payment error:', error);
           resolve({ success: false, error: error?.message || 'Payment failed' });
         },

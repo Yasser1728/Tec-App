@@ -38,8 +38,8 @@ export const usePiPayment = () => {
       });
 
       return result;
-    } catch (err: any) {
-      const errorMsg = err.message || 'Payment failed';
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Payment failed';
       setState({
         isLoading: false,
         result: null,

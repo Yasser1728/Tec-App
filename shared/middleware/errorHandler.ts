@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppError';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('error-handler');
 
 /**
  * Global error handling middleware
@@ -7,9 +10,9 @@ import { AppError } from '../errors/AppError';
  */
 export function errorHandler(
   err: Error | AppError,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
   // Default error values
   let statusCode = 500;
@@ -25,20 +28,30 @@ export function errorHandler(
     details = err.details;
   }
 
-  // Log error (in production, you might use a structured logger)
+  // Log error using structured logger
   const isProduction = process.env.NODE_ENV === 'production';
   
   if (!isProduction) {
-    console.error('Error details:', {
+    logger.error(message, {
       code,
-      message,
-      stack: err.stack,
-      details,
-    });
+      details: details as Record<string, unknown>,
+    }, err);
+  } else {
+    logger.error(message, { code });
   }
 
   // Prepare response
-  const errorResponse: any = {
+  interface ErrorResponse {
+    success: boolean;
+    error: {
+      code: string;
+      message: string;
+      details?: unknown;
+      stack?: string;
+    };
+  }
+
+  const errorResponse: ErrorResponse = {
     success: false,
     error: {
       code,
