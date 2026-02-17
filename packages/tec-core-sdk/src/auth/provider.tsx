@@ -1,12 +1,12 @@
 'use client';
 
-import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { TecAuthSDK } from './index';
 import { TecApiClient } from '../client';
 import { isPiBrowser } from '../utils/pi-browser';
 import type { TecUser, TecAuthResponse, TecSDKConfig } from '../types';
 
-interface TecAuthContextValue {
+export interface TecAuthContextValue {
   user: TecUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;

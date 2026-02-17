@@ -1,6 +1,5 @@
 import { TecApiClient } from '../client';
 import { isPiBrowser } from '../utils/pi-browser';
-import { storage, STORAGE_KEYS } from '../utils/storage';
 import type { A2UPaymentRequest, PaymentResult, Payment } from '../types';
 
 export class TecPaymentSDK {
@@ -22,8 +21,6 @@ export class TecPaymentSDK {
         reject(new Error('Pi SDK غير متاح'));
         return;
       }
-
-      const token = storage.get(STORAGE_KEYS.ACCESS_TOKEN);
 
       window.Pi.createPayment(
         { amount, memo, metadata },
