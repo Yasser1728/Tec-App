@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     if (!PI_API_KEY) {
       console.error('PI_API_KEY is not set');
       return NextResponse.json(
-        { success: false, message: 'Server configuration error: PI_API_KEY not set' },
+        { success: false, message: 'Server configuration error' },
         { status: 500 }
       );
     }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       const errorText = await response.text();
       console.error('Pi API A2U error:', response.status, errorText);
       return NextResponse.json(
-        { success: false, message: `Pi API error: ${errorText}` },
+        { success: false, message: 'Failed to create A2U payment' },
         { status: response.status }
       );
     }

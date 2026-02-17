@@ -18,8 +18,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           {`
             function initPi() {
               if (typeof Pi !== 'undefined') {
-                Pi.init({ version: "2.0", sandbox: true });
-                console.log("Pi SDK initialized (sandbox: true)");
+                const sandbox = "${process.env.NEXT_PUBLIC_PI_SANDBOX || 'true'}" !== "false";
+                Pi.init({ version: "2.0", sandbox: sandbox });
+                console.log("Pi SDK initialized (sandbox: " + sandbox + ")");
               }
             }
             if (typeof Pi !== 'undefined') {
