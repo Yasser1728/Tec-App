@@ -13,14 +13,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       <head>
         <title>TEC App — The Elite Consortium</title>
         <meta name="description" content="A complete ecosystem of 24 apps built on Pi Network" />
-        <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="afterInteractive" />
-        <Script id="pi-init" strategy="afterInteractive">
+        <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
+        <Script id="pi-init" strategy="beforeInteractive">
           {`
             function initPi() {
               if (typeof Pi !== 'undefined') {
-                const sandbox = "${process.env.NEXT_PUBLIC_PI_SANDBOX || 'true'}" !== "false";
+                const sandbox = "${process.env.NEXT_PUBLIC_PI_SANDBOX || 'false'}" !== "false";
                 Pi.init({ version: "2.0", sandbox: sandbox });
                 console.log("Pi SDK initialized (sandbox: " + sandbox + ")");
+                window.dispatchEvent(new Event('pi-sdk-ready'));
               }
             }
             if (typeof Pi !== 'undefined') {
@@ -36,6 +37,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               let timeoutId = setTimeout(function() {
                 clearInterval(checkPi);
                 console.error("Pi SDK failed to load after 10 seconds");
+                window.dispatchEvent(new Event('pi-sdk-error'));
               }, 10000);
             }
           `}
