@@ -50,67 +50,77 @@ app.use(rateLimiter);
 
 // Health check with downstream service status
 app.get('/health', async (_req, res) => {
-  const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
-  
-  const healthResponse: HealthResponse = {
-    status: 'ok',
-    service: 'api-gateway',
-    timestamp: new Date().toISOString(),
-    uptime,
-    version: SERVICE_VERSION,
-    services: {},
-  };
+  try {
+    const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
+    
+    const healthResponse: HealthResponse = {
+      status: 'ok',
+      service: 'api-gateway',
+      timestamp: new Date().toISOString(),
+      uptime,
+      version: SERVICE_VERSION,
+      services: {},
+    };
 
-  // Check downstream services
-  const services = [
-    { name: 'auth-service', url: `${AUTH_SERVICE_URL}/health` },
-    { name: 'wallet-service', url: `${WALLET_SERVICE_URL}/health` },
-    { name: 'payment-service', url: `${PAYMENT_SERVICE_URL}/health` },
-  ];
+    // Check downstream services
+    const services = [
+      { name: 'auth-service', url: `${AUTH_SERVICE_URL}/health` },
+      { name: 'wallet-service', url: `${WALLET_SERVICE_URL}/health` },
+      { name: 'payment-service', url: `${PAYMENT_SERVICE_URL}/health` },
+    ];
 
-  await Promise.all(
-    services.map(async (service) => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-        
-        const response = await fetch(service.url, {
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const data: unknown = await response.json();
-          const serviceData = data as { version?: string };
-          healthResponse.services[service.name] = {
-            status: 'ok',
-            version: serviceData.version || 'unknown',
-          };
-        } else {
+    await Promise.all(
+      services.map(async (service) => {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000);
+          
+          const response = await fetch(service.url, {
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          
+          if (response.ok) {
+            const data: unknown = await response.json();
+            const serviceData = data as { version?: string };
+            healthResponse.services[service.name] = {
+              status: 'ok',
+              version: serviceData.version || 'unknown',
+            };
+          } else {
+            healthResponse.services[service.name] = {
+              status: 'error',
+              message: `HTTP ${response.status}`,
+            };
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Connection failed';
           healthResponse.services[service.name] = {
             status: 'error',
-            message: `HTTP ${response.status}`,
+            message: errorMessage,
           };
         }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Connection failed';
-        healthResponse.services[service.name] = {
-          status: 'error',
-          message: errorMessage,
-        };
-      }
-    })
-  );
+      })
+    );
 
-  // Overall status is 'degraded' if any service is down
-  const anyServiceDown = Object.values(healthResponse.services).some(
-    (s) => s.status === 'error'
-  );
-  if (anyServiceDown) {
-    healthResponse.status = 'degraded';
+    // Overall status is 'degraded' if any service is down
+    const anyServiceDown = Object.values(healthResponse.services).some(
+      (s) => s.status === 'error'
+    );
+    if (anyServiceDown) {
+      healthResponse.status = 'degraded';
+    }
+
+    res.json(healthResponse);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Health check failed';
+    res.status(503).json({
+      status: 'error',
+      service: 'api-gateway',
+      timestamp: new Date().toISOString(),
+      message: errorMessage,
+    });
   }
-
-  res.json(healthResponse);
 });
 
 // API routes - proxy to microservices
