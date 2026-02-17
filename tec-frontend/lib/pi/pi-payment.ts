@@ -11,7 +11,7 @@ export interface A2UPaymentRequest {
 
 export interface PaymentResult {
   success: boolean;
-  paymentId: string;
+  paymentId?: string;
   txid?: string;
   status: 'pending' | 'approved' | 'completed' | 'cancelled' | 'failed';
   amount: number;
@@ -33,8 +33,11 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error((error as Record<string, string>).message || 'فشل إنشاء الدفعة');
+    interface ErrorResponse {
+      message?: string;
+    }
+    const error = await response.json().catch(() => ({ message: 'Unknown error' } as ErrorResponse));
+    throw new Error(error.message || 'فشل إنشاء الدفعة');
   }
 
   return response.json();
@@ -90,7 +93,6 @@ export const createU2APayment = (
         onCancel: () => {
           resolve({
             success: false,
-            paymentId: '',
             status: 'cancelled',
             amount,
             memo,

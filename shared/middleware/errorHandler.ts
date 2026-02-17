@@ -30,15 +30,16 @@ export function errorHandler(
 
   // Log error using shared logger
   const isProduction = process.env.NODE_ENV === 'production';
+  const logMessage = `Request failed: ${message}`;
   
   if (!isProduction) {
-    logger.error(message, {
+    logger.error(logMessage, {
       code,
       statusCode,
       details,
     }, err);
   } else {
-    logger.error(message, { code, statusCode });
+    logger.error(logMessage, { code, statusCode });
   }
 
   // Prepare response
