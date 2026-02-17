@@ -24,14 +24,44 @@ export const usePiAuth = () => {
   });
 
   useEffect(() => {
+    // Load stored user immediately
     const stored = getStoredUser();
+    const piDetected = isPiBrowser();
+    
     setState(prev => ({
       ...prev,
       user: stored,
       isAuthenticated: !!stored,
-      isLoading: false,
-      isPiBrowserEnv: isPiBrowser(),
+      isLoading: !piDetected && !stored, // Keep loading if Pi not detected yet
+      isPiBrowserEnv: piDetected,
     }));
+
+    // If Pi SDK not detected yet, poll for it (it loads async)
+    if (!piDetected) {
+      let attempts = 0;
+      const maxAttempts = 25; // 25 * 200ms = 5 seconds max
+      
+      const interval = setInterval(() => {
+        attempts++;
+        if (isPiBrowser()) {
+          clearInterval(interval);
+          setState(prev => ({
+            ...prev,
+            isPiBrowserEnv: true,
+            isLoading: false,
+          }));
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            // isPiBrowserEnv stays false — user is genuinely not in Pi Browser
+          }));
+        }
+      }, 200);
+
+      return () => clearInterval(interval);
+    }
   }, []);
 
   const login = useCallback(async () => {
