@@ -65,6 +65,7 @@ jobs:
           #
           # You may remove this line if you want to manage the configuration yourself.
           static_site_generator: next
+          generator_config_file: tec-frontend/next.config.js
       - name: Restore cache
         uses: actions/cache@v4
         with:
