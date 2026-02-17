@@ -62,6 +62,9 @@ export const usePiAuth = () => {
 
       return () => clearInterval(interval);
     }
+    
+    // Return no-op cleanup when Pi is already detected
+    return () => {};
   }, []);
 
   const login = useCallback(async () => {
