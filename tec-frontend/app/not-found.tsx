@@ -2,38 +2,85 @@ import Link from 'next/link';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6 text-center">
-        <div className="flex items-center justify-center w-16 h-16 mx-auto bg-blue-100 rounded-full">
-          <svg
-            className="w-8 h-8 text-blue-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--black)',
+      color: 'var(--white)',
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
+      <div style={{
+        maxWidth: '420px',
+        width: '100%',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '16px',
+        padding: '48px 32px',
+        textAlign: 'center',
+      }}>
+        <div style={{
+          width: '64px',
+          height: '64px',
+          margin: '0 auto 24px',
+          background: 'rgba(201, 168, 76, 0.1)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '28px',
+        }}>
+          🔍
         </div>
-        <h1 className="mt-4 text-6xl font-bold text-gray-900">404</h1>
-        <h2 className="mt-2 text-xl font-semibold text-gray-900">
-          Page not found
+        <h1 style={{
+          fontSize: '72px',
+          fontWeight: 300,
+          fontFamily: "'Cormorant Garamond', serif",
+          background: 'linear-gradient(135deg, #c9a84c, #e8d5a3, #c9a84c)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          margin: '0 0 8px',
+        }}>
+          404
+        </h1>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: 400,
+          color: 'var(--white)',
+          margin: '0 0 12px',
+        }}>
+          الصفحة غير موجودة
         </h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Sorry, we couldn't find the page you're looking for.
+        <p style={{
+          fontSize: '14px',
+          color: 'var(--muted)',
+          margin: '0 0 32px',
+          lineHeight: 1.6,
+        }}>
+          عذراً، لم نتمكن من العثور على الصفحة المطلوبة.
+          <br />
+          Sorry, we couldn&apos;t find the page you&apos;re looking for.
         </p>
-        <div className="mt-6">
-          <Link
-            href="/"
-            className="inline-block bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Go back home
-          </Link>
-        </div>
+        <Link
+          href="/"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '14px 32px',
+            background: 'linear-gradient(135deg, #c9a84c, #a07830)',
+            color: '#050507',
+            fontWeight: 600,
+            fontSize: '14px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            transition: 'all 0.3s',
+          }}
+        >
+          ← العودة للرئيسية / Go back home
+        </Link>
       </div>
     </div>
   );

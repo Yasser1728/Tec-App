@@ -1,4 +1,4 @@
-import { PiAuthResult, TecAuthResponse } from '@/types/pi.types';
+import { PiAuthResult, TecAuthResponse, PiPaymentData, PiPaymentCallbacks } from '@/types/pi.types';
 
 const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:4001';
 
@@ -7,9 +7,12 @@ declare global {
     Pi: {
       authenticate: (
         scopes: string[],
-        onIncompletePayment: (payment: any) => void
+        onIncompletePayment: (payment: unknown) => void
       ) => Promise<PiAuthResult>;
-      createPayment: (paymentData: any, callbacks: any) => void;
+      createPayment: (
+        paymentData: PiPaymentData,
+        callbacks: PiPaymentCallbacks
+      ) => void;
     };
   }
 }

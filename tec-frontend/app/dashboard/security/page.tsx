@@ -105,7 +105,7 @@ export default function SecurityPage() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Active Sessions</h2>
           <p className={styles.sectionDescription}>
-            Manage devices where you're currently logged in
+            Manage devices where you&apos;re currently logged in
           </p>
         </div>
         <div className={styles.list}>
@@ -133,7 +133,7 @@ export default function SecurityPage() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Trusted Devices</h2>
           <p className={styles.sectionDescription}>
-            Devices that you've marked as trusted
+            Devices that you&apos;ve marked as trusted
           </p>
         </div>
         <div className={styles.list}>

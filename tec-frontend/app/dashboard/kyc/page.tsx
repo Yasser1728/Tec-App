@@ -131,7 +131,7 @@ export default function KycPage() {
               >
                 <option value="passport">Passport</option>
                 <option value="national_id">National ID</option>
-                <option value="driver_license">Driver's License</option>
+                <option value="driver_license">Driver&apos;s License</option>
               </select>
             </div>
 
