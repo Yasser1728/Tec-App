@@ -2,15 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
+const PI_SANDBOX = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false' && process.env.PI_SANDBOX !== 'false';
 
 export async function POST(request: NextRequest) {
   try {
     const { paymentId } = await request.json();
     
-    if (!paymentId || !PI_API_KEY) {
+    if (!paymentId) {
       return NextResponse.json(
-        { success: false, message: 'Missing paymentId or API key' },
+        { success: false, message: 'paymentId is required' },
         { status: 400 }
+      );
+    }
+
+    // Sandbox mode fallback
+    if (!PI_API_KEY && PI_SANDBOX) {
+      console.log('[Sandbox] Simulating incomplete payment handling for:', paymentId);
+      return NextResponse.json({ 
+        success: true, 
+        action: 'no_action_needed', 
+        paymentId,
+        message: 'Sandbox mode - no incomplete payment handling needed'
+      });
+    }
+
+    if (!PI_API_KEY) {
+      return NextResponse.json(
+        { success: false, message: 'Server configuration error: PI_API_KEY not set' },
+        { status: 500 }
       );
     }
 
@@ -22,6 +41,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Failed to fetch payment:', errorText);
       return NextResponse.json(
         { success: false, message: 'Failed to fetch payment' },
         { status: response.status }

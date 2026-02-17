@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
+const PI_SANDBOX = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false' && process.env.PI_SANDBOX !== 'false';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,33 @@ export async function POST(request: NextRequest) {
         { success: false, message: 'recipientUid, amount, and memo are required' },
         { status: 400 }
       );
+    }
+
+    // Sandbox mode fallback
+    if (!PI_API_KEY && PI_SANDBOX) {
+      console.log('[Sandbox] Simulating A2U payment creation for:', recipientUid, amount, memo);
+      const mockPaymentId = `sandbox_a2u_${Date.now()}`;
+      return NextResponse.json({
+        success: true,
+        paymentId: mockPaymentId,
+        status: 'pending',
+        amount,
+        memo,
+        data: {
+          identifier: mockPaymentId,
+          user_uid: recipientUid,
+          amount,
+          memo,
+          metadata: metadata || {},
+          status: {
+            developer_approved: false,
+            transaction_verified: false,
+            developer_completed: false,
+            cancelled: false,
+            user_cancelled: false,
+          }
+        }
+      });
     }
 
     if (!PI_API_KEY) {

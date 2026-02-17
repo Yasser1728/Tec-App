@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
+const PI_SANDBOX = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false' && process.env.PI_SANDBOX !== 'false';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,36 @@ export async function POST(request: NextRequest) {
         { success: false, message: 'paymentId and txid are required' },
         { status: 400 }
       );
+    }
+
+    // Sandbox mode fallback - simulate completion when PI_API_KEY is not set
+    if (!PI_API_KEY && PI_SANDBOX) {
+      console.log('[Sandbox] Simulating payment completion for:', paymentId, txid);
+      return NextResponse.json({ 
+        success: true, 
+        paymentId,
+        txid,
+        status: 'completed',
+        amount: 1,
+        memo: 'TEC Demo Payment (Sandbox)',
+        data: {
+          identifier: paymentId,
+          transaction: {
+            txid,
+            verified: true,
+            _link: `https://testnet.minepi.com/blockexplorer/tx/${txid}`,
+          },
+          status: {
+            developer_approved: true,
+            transaction_verified: true,
+            developer_completed: true,
+            cancelled: false,
+            user_cancelled: false,
+          },
+          amount: 1,
+          memo: 'TEC Demo Payment (Sandbox)',
+        }
+      });
     }
 
     if (!PI_API_KEY) {
