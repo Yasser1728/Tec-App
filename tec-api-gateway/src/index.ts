@@ -49,7 +49,7 @@ app.use(morgan('combined'));
 app.use(rateLimiter);
 
 // Health check with downstream service status
-app.get('/health', async (req, res) => {
+app.get('/health', async (_req, res) => {
   const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
   
   const healthResponse: HealthResponse = {
@@ -80,10 +80,11 @@ app.get('/health', async (req, res) => {
         clearTimeout(timeoutId);
         
         if (response.ok) {
-          const data = await response.json();
+          const data: unknown = await response.json();
+          const serviceData = data as { version?: string };
           healthResponse.services[service.name] = {
             status: 'ok',
-            version: data.version || 'unknown',
+            version: serviceData.version || 'unknown',
           };
         } else {
           healthResponse.services[service.name] = {
@@ -116,7 +117,7 @@ app.get('/health', async (req, res) => {
 app.use('/api', logger, proxyRoutes);
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (_req, res) => {
   res.status(404).json({
     success: false,
     error: {
@@ -127,7 +128,7 @@ app.use('*', (req, res) => {
 });
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('API Gateway Error:', err);
   res.status(500).json({
     success: false,
