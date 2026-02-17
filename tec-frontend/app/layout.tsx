@@ -25,13 +25,17 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             if (typeof Pi !== 'undefined') {
               initPi();
             } else {
-              var checkPi = setInterval(function() {
+              let checkPi = setInterval(function() {
                 if (typeof Pi !== 'undefined') {
                   clearInterval(checkPi);
+                  clearTimeout(timeoutId);
                   initPi();
                 }
               }, 100);
-              setTimeout(function() { clearInterval(checkPi); }, 10000);
+              let timeoutId = setTimeout(function() {
+                clearInterval(checkPi);
+                console.error("Pi SDK failed to load after 10 seconds");
+              }, 10000);
             }
           `}
         </Script>
