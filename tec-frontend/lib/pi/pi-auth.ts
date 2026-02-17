@@ -12,6 +12,7 @@ declare global {
         callbacks: PiPaymentCallbacks
       ) => void;
     };
+    __PI_SANDBOX?: boolean;
   }
 }
 
@@ -40,21 +41,31 @@ const handleIncompletePayment = async (payment: unknown) => {
 // Wrap authenticate with timeout
 const authenticateWithTimeout = (timeout = 30000): Promise<PiAuthResult> => {
   return new Promise((resolve, reject) => {
+    // Debug logging
+    console.log('[TEC Pi Auth] Starting authentication...');
+    console.log('[TEC Pi Auth] window.Pi exists:', typeof window.Pi !== 'undefined');
+    console.log('[TEC Pi Auth] Requested scopes:', ['username', 'payments', 'wallet_address']);
+    console.log('[TEC Pi Auth] Timeout value:', timeout, 'ms');
+    
     const timer = setTimeout(() => {
+      console.error('[TEC Pi Auth] Authentication timed out after', timeout, 'ms');
       reject(new Error(
         'انتهت مهلة المصادقة. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
         'Authentication timed out. Please check your internet connection and try again.'
       ));
     }, timeout);
 
+    console.log('[TEC Pi Auth] Calling window.Pi.authenticate()...');
     window.Pi.authenticate(
       ['username', 'payments', 'wallet_address'],
       handleIncompletePayment
     ).then(result => {
       clearTimeout(timer);
+      console.log('[TEC Pi Auth] Authentication successful:', { uid: result.user.uid, username: result.user.username });
       resolve(result);
     }).catch(err => {
       clearTimeout(timer);
+      console.error('[TEC Pi Auth] Authentication failed with error:', err);
       reject(err);
     });
   });
@@ -62,6 +73,7 @@ const authenticateWithTimeout = (timeout = 30000): Promise<PiAuthResult> => {
 
 export const loginWithPi = async (): Promise<TecAuthResponse> => {
   if (!isPiBrowser()) {
+    console.error('[TEC Pi Auth] Not in Pi Browser - window.Pi is undefined');
     throw new Error(
       'يرجى فتح التطبيق داخل متصفح Pi Network للمصادقة.\n' +
       'Please open the app inside Pi Browser to authenticate.\n\n' +
@@ -70,6 +82,7 @@ export const loginWithPi = async (): Promise<TecAuthResponse> => {
     );
   }
 
+  console.log('[TEC Pi Auth] isPiBrowser() check passed, proceeding with authentication');
   const piAuth = await authenticateWithTimeout();
 
   // For Testnet/demo: create a local auth response
