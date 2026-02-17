@@ -15,7 +15,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <meta name="description" content="A complete ecosystem of 24 apps built on Pi Network" />
         <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
         <Script id="pi-init" strategy="afterInteractive">
-          {`Pi.init({ version: "2.0", sandbox: ${process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false'} });`}
+          {`
+            if (typeof Pi !== 'undefined') {
+              Pi.init({ version: "2.0", sandbox: true });
+            } else {
+              document.addEventListener('PiSDKReady', function() {
+                Pi.init({ version: "2.0", sandbox: true });
+              });
+            }
+          `}
         </Script>
       </head>
       <body>{children}</body>

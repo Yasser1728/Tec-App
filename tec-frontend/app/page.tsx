@@ -20,7 +20,10 @@ export default function HomePage() {
     try {
       await login();
       router.push('/dashboard');
-    } catch {}
+    } catch (err: unknown) {
+      // Error is already handled in usePiAuth hook
+      console.error('Login failed:', err);
+    }
   };
 
   const apps = [
