@@ -1,0 +1,15 @@
+# GitHub Copilot Code Review Configuration
+# This file disables automatic code review to prevent authentication errors
+# when accessing private GitHub repositories for artifacts
+
+# Disable automatic code review on pull requests
+enabled: false
+
+# Alternative: If you want to enable code review in the future,
+# you'll need to configure proper authentication for accessing
+# github/autovalidate-cli-binaries and github/copilot-code-review-published-artifacts
+# 
+# To enable in the future:
+# 1. Set enabled: true
+# 2. Ensure repository has access to required private repositories
+# 3. Configure proper permissions in repository settings
