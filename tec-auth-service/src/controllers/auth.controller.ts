@@ -161,7 +161,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     // Return user without password
-    const { password_hash, ...userWithoutPassword } = user;
+    const { password_hash: _password_hash, ...userWithoutPassword } = user;
 
     res.json({
       success: true,

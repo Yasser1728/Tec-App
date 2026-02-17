@@ -21,6 +21,8 @@ for (const envVar of requiredEnvVars) {
 
 const app: Application = express();
 const PORT = process.env.PORT || 5001;
+const SERVICE_VERSION = process.env.SERVICE_VERSION || '1.0.0';
+const serviceStartTime = Date.now();
 
 // Security middleware
 app.use(helmet());
@@ -35,10 +37,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
+  const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
   res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
+    status: 'ok',
     service: 'auth-service',
+    timestamp: new Date().toISOString(),
+    uptime,
+    version: SERVICE_VERSION,
   });
 });
 
@@ -61,7 +66,7 @@ app.use('*', (req, res) => {
 });
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Auth Service Error:', err);
   res.status(500).json({
     success: false,

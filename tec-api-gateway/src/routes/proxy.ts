@@ -12,15 +12,15 @@ const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost
 const createProxyOptions = (target: string): Options => ({
   target,
   changeOrigin: true,
-  pathRewrite: (path, req) => {
+  pathRewrite: (path) => {
     // Remove /api prefix when forwarding to services
     return path.replace(/^\/api/, '');
   },
-  onProxyReq: (proxyReq, req, res) => {
+  onProxyReq: (_proxyReq, req) => {
     // Log proxy requests
     console.log(`[Proxy] ${req.method} ${req.path} → ${target}`);
   },
-  onProxyRes: (proxyRes, req, res) => {
+  onProxyRes: (proxyRes, req) => {
     // Log proxy responses
     console.log(`[Proxy] ${req.method} ${req.path} ← ${proxyRes.statusCode}`);
   },
