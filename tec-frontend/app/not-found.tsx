@@ -79,7 +79,7 @@ export default function NotFound() {
             transition: 'all 0.3s',
           }}
         >
-          ← العودة للرئيسية
+          ← العودة للرئيسية / Go back home
         </Link>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { PiAuthResult, TecAuthResponse } from '@/types/pi.types';
+import { PiAuthResult, TecAuthResponse, PiPaymentData, PiPaymentCallbacks } from '@/types/pi.types';
 
 const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:4001';
 
@@ -10,13 +10,8 @@ declare global {
         onIncompletePayment: (payment: unknown) => void
       ) => Promise<PiAuthResult>;
       createPayment: (
-        paymentData: { amount: number; memo: string; metadata: Record<string, unknown> },
-        callbacks: {
-          onReadyForServerApproval: (paymentId: string) => void;
-          onReadyForServerCompletion: (paymentId: string, txid: string) => void;
-          onCancel: (paymentId: string) => void;
-          onError: (error: Error, payment?: unknown) => void;
-        }
+        paymentData: PiPaymentData,
+        callbacks: PiPaymentCallbacks
       ) => void;
     };
   }
