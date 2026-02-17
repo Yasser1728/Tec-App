@@ -7,7 +7,7 @@ import styles from './PiIntegration.module.css';
 
 export default function PiIntegration() {
   const { user, isAuthenticated, login } = usePiAuth();
-  const { isLoading, result, testSdk, payDemo } = usePiPayment();
+  const { isProcessing, lastPayment, testSDK, payDemoPi } = usePiPayment();
   const { t } = useTranslation();
 
   const handleConnect = async () => {
@@ -17,7 +17,7 @@ export default function PiIntegration() {
   };
 
   const handleTestSdk = () => {
-    const available = testSdk();
+    const available = testSDK();
     if (available) {
       console.log('✅ Pi SDK Test: PASSED');
       console.log('🌐 Mainnet Mode: Real Pi payments enabled');
@@ -28,7 +28,7 @@ export default function PiIntegration() {
 
   const handlePayDemo = async () => {
     try {
-      await payDemo();
+      await payDemoPi();
     } catch (err) {
       console.error('Payment error:', err);
     }
@@ -67,9 +67,9 @@ export default function PiIntegration() {
               <button 
                 className={`${styles.btn} ${styles.btnPay}`} 
                 onClick={handlePayDemo}
-                disabled={isLoading}
+                disabled={isProcessing}
               >
-                {isLoading ? (
+                {isProcessing ? (
                   <span>{t.dashboard.piIntegration.processing}</span>
                 ) : (
                   <span>💎 {t.dashboard.piIntegration.payDemo}</span>
@@ -77,15 +77,15 @@ export default function PiIntegration() {
               </button>
             </div>
 
-            {result?.success && (
+            {lastPayment?.success && (
               <div className={styles.success}>
                 ✅ {t.dashboard.piIntegration.paymentSuccess}
               </div>
             )}
 
-            {result && !result.success && (
+            {lastPayment && !lastPayment.success && (
               <div className={styles.error}>
-                ❌ {t.dashboard.piIntegration.paymentFailed}: {result.error}
+                ❌ {t.dashboard.piIntegration.paymentFailed}
               </div>
             )}
           </>

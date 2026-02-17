@@ -1,90 +1,118 @@
-// App-to-User Payment Service
-// This handles payments FROM the app TO the user (rewards, refunds, etc.)
+import { getAccessToken } from './pi-auth';
 
 const PAYMENT_SERVICE_URL = process.env.NEXT_PUBLIC_PAYMENT_SERVICE_URL || 'http://localhost:4003';
 
-export interface PaymentConfig {
+export interface A2UPaymentRequest {
+  recipientUid: string;
   amount: number;
   memo: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PaymentResult {
   success: boolean;
   paymentId?: string;
   txid?: string;
-  error?: string;
+  status: 'pending' | 'approved' | 'completed' | 'cancelled' | 'failed';
+  amount: number;
+  memo: string;
 }
 
-// Test Pi SDK connectivity
-export const testPiSdk = (): boolean => {
-  if (typeof window === 'undefined' || !window.Pi) {
-    console.error('❌ Pi SDK not available');
-    return false;
+// Create App-to-User payment (server-side initiated)
+export const createA2UPayment = async (data: A2UPaymentRequest): Promise<PaymentResult> => {
+  const token = getAccessToken();
+  if (!token) throw new Error('غير مصرح — سجل الدخول أولاً');
+
+  const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/a2u/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    interface ErrorResponse {
+      message?: string;
+    }
+    const error = await response.json().catch(() => ({ message: 'Unknown error' } as ErrorResponse));
+    throw new Error(error.message || 'فشل إنشاء الدفعة');
   }
-  console.log('✅ Pi SDK is available');
-  console.log('📦 Pi SDK version:', window.Pi);
-  return true;
+
+  return response.json();
 };
 
-// Create App-to-User payment (User pays the app)
-export const createAppToUserPayment = async (config: PaymentConfig): Promise<PaymentResult> => {
-  return new Promise((resolve) => {
+// User-to-App payment using Pi SDK (client-side)
+export const createU2APayment = (
+  amount: number,
+  memo: string,
+  metadata: Record<string, unknown> = {}
+): Promise<PaymentResult> => {
+  return new Promise((resolve, reject) => {
     if (typeof window === 'undefined' || !window.Pi) {
-      resolve({ success: false, error: 'Pi SDK not available' });
+      reject(new Error('Pi SDK غير متاح'));
       return;
     }
 
+    const token = getAccessToken();
+
     window.Pi.createPayment(
-      {
-        amount: config.amount,
-        memo: config.memo,
-        metadata: config.metadata || {},
-      },
+      { amount, memo, metadata },
       {
         onReadyForServerApproval: async (paymentId: string) => {
-          console.log('📋 Payment ready for approval:', paymentId);
           try {
-            const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/approve`, {
+            await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/approve`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
               body: JSON.stringify({ paymentId }),
             });
-            if (!response.ok) {
-              console.error('❌ Server approval failed with status:', response.status);
-            }
           } catch (err) {
-            console.error('❌ Server approval failed:', err);
+            console.error('Server approval failed:', err);
           }
         },
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
-          console.log('✅ Payment completing:', paymentId, txid);
           try {
-            const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/complete`, {
+            const res = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/complete`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
               body: JSON.stringify({ paymentId, txid }),
             });
-            if (!response.ok) {
-              console.error('❌ Server completion failed with status:', response.status);
-              resolve({ success: false, error: 'Server completion failed' });
-              return;
-            }
-            resolve({ success: true, paymentId, txid });
+            const result = await res.json();
+            resolve(result as PaymentResult);
           } catch (err) {
-            console.error('❌ Server completion failed:', err);
-            resolve({ success: false, error: 'Server completion failed' });
+            reject(err);
           }
         },
         onCancel: () => {
-          console.log('❌ Payment cancelled');
-          resolve({ success: false, error: 'Payment cancelled by user' });
+          resolve({
+            success: false,
+            status: 'cancelled',
+            amount,
+            memo,
+          });
         },
-        onError: (error: any) => {
-          console.error('💥 Payment error:', error);
-          resolve({ success: false, error: error?.message || 'Payment failed' });
+        onError: (error: Error) => {
+          reject(error);
         },
       }
     );
   });
+};
+
+// Test Pi SDK connectivity
+export const testPiSDK = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const available = typeof window.Pi !== 'undefined';
+  console.log('Pi SDK available:', available);
+  if (available) {
+    console.log('Pi SDK object:', window.Pi);
+  }
+  return available;
 };

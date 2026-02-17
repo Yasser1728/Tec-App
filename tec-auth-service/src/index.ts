@@ -36,15 +36,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   const uptime = Math.floor((Date.now() - serviceStartTime) / 1000);
-  res.json({
+  
+  interface HealthResponse {
+    status: string;
+    service: string;
+    timestamp: string;
+    uptime: number;
+    version: string;
+  }
+  
+  const response: HealthResponse = {
     status: 'ok',
     service: 'auth-service',
     timestamp: new Date().toISOString(),
     uptime,
     version: SERVICE_VERSION,
-  });
+  };
+  
+  res.json(response);
 });
 
 // Routes
