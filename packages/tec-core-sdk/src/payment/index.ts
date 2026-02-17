@@ -11,7 +11,7 @@ export class TecPaymentSDK {
 
   // App-to-User payment (server-side)
   async createA2UPayment(data: A2UPaymentRequest): Promise<PaymentResult> {
-    return this.client.post<PaymentResult>('/api/payments/a2u/create', data);
+    return this.client.post<PaymentResult>('/api/payments/a2u', data);
   }
 
   // User-to-App payment (client-side via Pi SDK)
@@ -30,6 +30,7 @@ export class TecPaymentSDK {
               await this.client.post('/api/payments/approve', { paymentId });
             } catch (err) {
               console.error('Server approval failed:', err);
+              reject(err instanceof Error ? err : new Error('Server approval failed'));
             }
           },
           onReadyForServerCompletion: async (paymentId: string, txid: string) => {

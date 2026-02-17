@@ -96,14 +96,16 @@ export const createU2APayment = (
               const errorData = await res.json().catch(() => ({ message: 'Approval failed' }));
               const errorMsg = errorData.message || 'فشلت الموافقة / Approval failed';
               console.error('[Pi Payment] Server approval failed:', errorMsg);
-              throw new Error(errorMsg);
+              reject(new Error(errorMsg));
+              return;
             }
             
             const result = await res.json();
             console.log('[Pi Payment] Server approval successful:', result);
           } catch (err) {
             console.error('[Pi Payment] Server approval error:', err);
-            // Let the SDK handle the failure - it will call onError
+            const errorMessage = err instanceof Error ? err.message : 'فشلت الموافقة / Approval failed';
+            reject(new Error(errorMessage));
           }
         },
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {

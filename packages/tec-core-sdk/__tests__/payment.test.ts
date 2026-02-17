@@ -54,7 +54,7 @@ describe('TecPaymentSDK', () => {
 
       const result = await paymentSDK.createA2UPayment(request);
 
-      expect(mockClient.post).toHaveBeenCalledWith('/api/payments/a2u/create', request);
+      expect(mockClient.post).toHaveBeenCalledWith('/api/payments/a2u', request);
       expect(result).toEqual(mockResult);
     });
   });

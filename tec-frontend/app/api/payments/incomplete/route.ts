@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     if (!PI_API_KEY) {
       return NextResponse.json(
-        { success: false, message: 'Server configuration error: PI_API_KEY not set' },
+        { success: false, message: 'Server configuration error' },
         { status: 500 }
       );
     }
