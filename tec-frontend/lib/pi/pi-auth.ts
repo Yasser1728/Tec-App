@@ -37,15 +37,32 @@ const handleIncompletePayment = async (payment: unknown) => {
   }
 };
 
+// Wrap authenticate with timeout
+const authenticateWithTimeout = (timeout = 30000): Promise<PiAuthResult> => {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('Authentication timed out. Please try again.'));
+    }, timeout);
+
+    window.Pi.authenticate(
+      ['username', 'payments', 'wallet_address'],
+      handleIncompletePayment
+    ).then(result => {
+      clearTimeout(timer);
+      resolve(result);
+    }).catch(err => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+};
+
 export const loginWithPi = async (): Promise<TecAuthResponse> => {
   if (!isPiBrowser()) {
     throw new Error('يجب فتح التطبيق داخل Pi Browser');
   }
 
-  const piAuth = await window.Pi.authenticate(
-    ['username', 'payments', 'wallet_address'],
-    handleIncompletePayment
-  );
+  const piAuth = await authenticateWithTimeout();
 
   // For Testnet/demo: create a local auth response
   // In production, this would call a real auth backend
