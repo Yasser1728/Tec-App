@@ -1,7 +1,5 @@
 import { PiAuthResult, TecAuthResponse, PiPaymentData, PiPaymentCallbacks } from '@/types/pi.types';
 
-const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:4001';
-
 declare global {
   interface Window {
     Pi: {
@@ -22,6 +20,23 @@ export const isPiBrowser = (): boolean => {
   return typeof window.Pi !== 'undefined';
 };
 
+// Handle incomplete payments from previous sessions
+const handleIncompletePayment = async (payment: unknown) => {
+  console.warn('Incomplete payment detected:', payment);
+  try {
+    const paymentObj = payment as { identifier?: string };
+    if (paymentObj?.identifier) {
+      await fetch('/api/payments/incomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: paymentObj.identifier }),
+      });
+    }
+  } catch (err) {
+    console.error('Failed to handle incomplete payment:', err);
+  }
+};
+
 export const loginWithPi = async (): Promise<TecAuthResponse> => {
   if (!isPiBrowser()) {
     throw new Error('يجب فتح التطبيق داخل Pi Browser');
@@ -29,21 +44,29 @@ export const loginWithPi = async (): Promise<TecAuthResponse> => {
 
   const piAuth = await window.Pi.authenticate(
     ['username', 'payments', 'wallet_address'],
-    (payment) => console.log('Incomplete payment:', payment)
+    handleIncompletePayment
   );
 
-  const response = await fetch(`${AUTH_SERVICE_URL}/api/v1/auth/pi-login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  // For Testnet/demo: create a local auth response
+  // In production, this would call a real auth backend
+  const user = {
+    id: piAuth.user.uid,
+    piId: piAuth.user.uid,
+    piUsername: piAuth.user.username,
+    role: 'user',
+    subscriptionPlan: null,
+    createdAt: new Date().toISOString(),
+  };
+
+  const data: TecAuthResponse = {
+    success: true,
+    isNewUser: true,
+    user,
+    tokens: {
       accessToken: piAuth.accessToken,
-      appSource: 'tec',
-    }),
-  });
-
-  if (!response.ok) throw new Error('فشل تسجيل الدخول — حاول مرة أخرى');
-
-  const data: TecAuthResponse = await response.json();
+      refreshToken: piAuth.accessToken,
+    },
+  };
 
   localStorage.setItem('tec_access_token', data.tokens.accessToken);
   localStorage.setItem('tec_refresh_token', data.tokens.refreshToken);

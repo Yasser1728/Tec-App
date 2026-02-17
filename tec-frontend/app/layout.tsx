@@ -14,8 +14,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <title>TEC App — The Elite Consortium</title>
         <meta name="description" content="A complete ecosystem of 24 apps built on Pi Network" />
         <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
-        <Script id="pi-init" strategy="beforeInteractive">
-          {`Pi.init({ version: "2.0", sandbox: ${process.env.NODE_ENV !== 'production'} });`}
+        <Script id="pi-init" strategy="afterInteractive">
+          {`Pi.init({ version: "2.0", sandbox: ${process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false'} });`}
         </Script>
       </head>
       <body>{children}</body>
