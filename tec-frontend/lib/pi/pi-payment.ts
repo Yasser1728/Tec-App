@@ -80,10 +80,42 @@ export const createU2APayment = (
       return;
     }
 
+    // Payment timeout: 5 minutes (300 seconds)
+    const PAYMENT_TIMEOUT = 5 * 60 * 1000;
+    let paymentTimedOut = false;
+    
+    const paymentTimer = setTimeout(() => {
+      paymentTimedOut = true;
+      reject(new Error(
+        'انتهت مهلة الدفع. يرجى المحاولة مرة أخرى.\n' +
+        'Payment timed out. Please try again.'
+      ));
+    }, PAYMENT_TIMEOUT);
+
+    // Helper to clear timeout
+    const clearPaymentTimer = () => {
+      if (paymentTimer) {
+        clearTimeout(paymentTimer);
+      }
+    };
+
     window.Pi.createPayment(
       { amount, memo, metadata },
       {
         onReadyForServerApproval: async (paymentId: string) => {
+          if (paymentTimedOut) return;
+
+          // Validate paymentId format before sending to server
+          const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
+          if (!paymentIdRegex.test(paymentId)) {
+            console.error('[Pi Payment] Invalid paymentId format:', paymentId);
+            clearPaymentTimer();
+            reject(new Error(
+              'معرف الدفع غير صالح / Invalid payment ID format'
+            ));
+            return;
+          }
+
           try {
             console.log('[Pi Payment] Server approval requested for:', paymentId);
             const res = await retryFetch('/api/payments/approve', {
@@ -96,6 +128,8 @@ export const createU2APayment = (
               const errorData = await res.json().catch(() => ({ message: 'Approval failed' }));
               const errorMsg = errorData.message || 'فشلت الموافقة / Approval failed';
               console.error('[Pi Payment] Server approval failed:', errorMsg);
+              console.warn('[Pi Payment] Incomplete payment may remain:', paymentId);
+              clearPaymentTimer();
               reject(new Error(errorMsg));
               return;
             }
@@ -104,11 +138,15 @@ export const createU2APayment = (
             console.log('[Pi Payment] Server approval successful:', result);
           } catch (err) {
             console.error('[Pi Payment] Server approval error:', err);
+            console.warn('[Pi Payment] Incomplete payment may remain:', paymentId);
             const errorMessage = err instanceof Error ? err.message : 'فشلت الموافقة / Approval failed';
+            clearPaymentTimer();
             reject(new Error(errorMessage));
           }
         },
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+          if (paymentTimedOut) return;
+
           try {
             console.log('[Pi Payment] Server completion requested for:', paymentId, txid);
             const res = await retryFetch('/api/payments/complete', {
@@ -121,12 +159,15 @@ export const createU2APayment = (
               const errorData = await res.json().catch(() => ({ message: 'Completion failed' }));
               const errorMsg = errorData.message || 'فشل الإكمال / Completion failed';
               console.error('[Pi Payment] Server completion failed:', errorMsg);
-              throw new Error(errorMsg);
+              clearPaymentTimer();
+              reject(new Error(errorMsg));
+              return;
             }
             
             const result = await res.json();
             console.log('[Pi Payment] Server completion successful:', result);
             
+            clearPaymentTimer();
             resolve({
               success: true,
               paymentId,
@@ -139,11 +180,13 @@ export const createU2APayment = (
             });
           } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'فشلت الدفعة / Payment failed';
+            clearPaymentTimer();
             reject(new Error(errorMessage));
           }
         },
         onCancel: () => {
           console.log('[Pi Payment] Payment cancelled by user');
+          clearPaymentTimer();
           resolve({
             success: false,
             status: 'cancelled',
@@ -154,6 +197,7 @@ export const createU2APayment = (
         },
         onError: (error: Error) => {
           console.error('[Pi Payment] SDK error:', error);
+          clearPaymentTimer();
           reject(new Error(`خطأ Pi SDK / Pi SDK error: ${error.message}`));
         },
       }

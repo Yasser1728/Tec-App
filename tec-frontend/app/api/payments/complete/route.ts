@@ -4,20 +4,59 @@ const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
 const PI_SANDBOX = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false' && process.env.PI_SANDBOX !== 'false';
 
+// Log configuration at startup
+console.log('[Payment Complete] Configuration:', {
+  PI_API_KEY_SET: !!PI_API_KEY,
+  PI_SANDBOX,
+  PI_API_URL,
+});
+
 export async function POST(request: NextRequest) {
   try {
     const { paymentId, txid } = await request.json();
     
     if (!paymentId || !txid) {
+      console.error('[Payment Complete] Missing required fields:', { paymentId: !!paymentId, txid: !!txid });
       return NextResponse.json(
         { success: false, message: 'paymentId and txid are required' },
         { status: 400 }
       );
     }
 
+    // Validate paymentId format to prevent path traversal
+    const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!paymentIdRegex.test(paymentId)) {
+      console.error('[Payment Complete] Invalid paymentId format:', paymentId);
+      return NextResponse.json(
+        { success: false, message: 'Invalid paymentId format' },
+        { status: 400 }
+      );
+    }
+
+    // Validate txid format (blockchain transaction ID)
+    const txidRegex = /^[a-fA-F0-9]{64}$/;
+    if (!txidRegex.test(txid)) {
+      console.error('[Payment Complete] Invalid txid format:', txid);
+      return NextResponse.json(
+        { success: false, message: 'Invalid transaction ID format' },
+        { status: 400 }
+      );
+    }
+
+    // Log request origin for security monitoring
+    const origin = request.headers.get('origin') || 'unknown';
+    const referer = request.headers.get('referer') || 'unknown';
+    console.log('[Payment Complete] Request received:', {
+      paymentId,
+      txid,
+      origin,
+      referer,
+      timestamp: new Date().toISOString(),
+    });
+
     // Sandbox mode fallback - simulate completion when PI_API_KEY is not set
     if (!PI_API_KEY && PI_SANDBOX) {
-      console.log('[Sandbox] Simulating payment completion for:', paymentId, txid);
+      console.log('[Payment Complete] Sandbox mode: Simulating completion for:', paymentId, txid);
       return NextResponse.json({ 
         success: true, 
         paymentId,
@@ -46,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!PI_API_KEY) {
-      console.error('PI_API_KEY is not set');
+      console.error('[Payment Complete] PI_API_KEY is not set - cannot complete payment');
       return NextResponse.json(
         { success: false, message: 'Server configuration error' },
         { status: 500 }
@@ -54,6 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Complete the payment with Pi Platform API
+    console.log('[Payment Complete] Calling Pi API for:', paymentId, txid);
     const response = await fetch(`${PI_API_URL}/v2/payments/${paymentId}/complete`, {
       method: 'POST',
       headers: {
@@ -65,7 +105,13 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Pi API complete error:', errorText);
+      console.error('[Payment Complete] Pi API error:', {
+        paymentId,
+        txid,
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+      });
       return NextResponse.json(
         { success: false, message: 'Failed to complete payment' },
         { status: response.status }
@@ -73,6 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    console.log('[Payment Complete] Success:', { paymentId, txid, status: data.status });
     return NextResponse.json({ 
       success: true, 
       paymentId,
@@ -83,7 +130,10 @@ export async function POST(request: NextRequest) {
       data 
     });
   } catch (error: unknown) {
-    console.error('Payment completion error:', error);
+    console.error('[Payment Complete] Exception:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
       { success: false, message },
