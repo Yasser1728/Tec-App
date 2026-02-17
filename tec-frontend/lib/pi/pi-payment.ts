@@ -80,8 +80,8 @@ export const createU2APayment = (
       return;
     }
 
-    // Payment timeout: 5 minutes (300 seconds)
-    const PAYMENT_TIMEOUT = 5 * 60 * 1000;
+    // Payment timeout: 5 minutes (300,000 milliseconds)
+    const PAYMENT_TIMEOUT_MS = 5 * 60 * 1000;
     let paymentTimedOut = false;
     
     const paymentTimer = setTimeout(() => {
@@ -90,13 +90,11 @@ export const createU2APayment = (
         'انتهت مهلة الدفع. يرجى المحاولة مرة أخرى.\n' +
         'Payment timed out. Please try again.'
       ));
-    }, PAYMENT_TIMEOUT);
+    }, PAYMENT_TIMEOUT_MS);
 
     // Helper to clear timeout
     const clearPaymentTimer = () => {
-      if (paymentTimer) {
-        clearTimeout(paymentTimer);
-      }
+      clearTimeout(paymentTimer);
     };
 
     window.Pi.createPayment(

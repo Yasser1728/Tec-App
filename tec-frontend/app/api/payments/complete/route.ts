@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate txid format (blockchain transaction ID)
+    // Pi Network blockchain uses SHA-256 hashes, which are 64 hexadecimal characters
     const txidRegex = /^[a-fA-F0-9]{64}$/;
     if (!txidRegex.test(txid)) {
       console.error('[Payment Complete] Invalid txid format:', txid);
