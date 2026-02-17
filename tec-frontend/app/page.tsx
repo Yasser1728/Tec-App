@@ -66,7 +66,11 @@ export default function HomePage() {
         </p>
 
         <div className={`${styles.ctaWrap} fade-up-3`}>
-          {!isPiBrowserEnv ? (
+          {isLoading ? (
+            <button className={`btn-gold ${styles.loginBtn}`} disabled>
+              <span className={styles.spinner} />{t.common.loading}
+            </button>
+          ) : !isPiBrowserEnv ? (
             <div className={styles.warningBox}>
               <span>⚠️</span>
               <div>
