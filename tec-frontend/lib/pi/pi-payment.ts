@@ -1,7 +1,5 @@
 import { getAccessToken } from './pi-auth';
 
-const PAYMENT_SERVICE_URL = process.env.NEXT_PUBLIC_PAYMENT_SERVICE_URL || 'http://localhost:4003';
-
 export interface A2UPaymentRequest {
   recipientUid: string;
   amount: number;
@@ -23,7 +21,7 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
   const token = getAccessToken();
   if (!token) throw new Error('غير مصرح — سجل الدخول أولاً');
 
-  const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/a2u/create`, {
+  const response = await fetch('/api/payments/a2u', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -33,10 +31,7 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
   });
 
   if (!response.ok) {
-    interface ErrorResponse {
-      message?: string;
-    }
-    const error = await response.json().catch(() => ({ message: 'Unknown error' } as ErrorResponse));
+    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
     throw new Error(error.message || 'فشل إنشاء الدفعة');
   }
 
@@ -51,41 +46,44 @@ export const createU2APayment = (
 ): Promise<PaymentResult> => {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined' || !window.Pi) {
-      reject(new Error('Pi SDK غير متاح'));
+      reject(new Error('Pi SDK غير متاح — افتح التطبيق في Pi Browser'));
       return;
     }
-
-    const token = getAccessToken();
 
     window.Pi.createPayment(
       { amount, memo, metadata },
       {
         onReadyForServerApproval: async (paymentId: string) => {
           try {
-            await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/approve`, {
+            const res = await fetch('/api/payments/approve', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ paymentId }),
             });
+            if (!res.ok) {
+              console.error('Server approval failed:', await res.text());
+            }
           } catch (err) {
             console.error('Server approval failed:', err);
           }
         },
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
           try {
-            const res = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/complete`, {
+            const res = await fetch('/api/payments/complete', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ paymentId, txid }),
             });
             const result = await res.json();
-            resolve(result as PaymentResult);
+            resolve({
+              success: true,
+              paymentId,
+              txid,
+              status: 'completed',
+              amount,
+              memo,
+              ...result,
+            });
           } catch (err) {
             reject(err);
           }
