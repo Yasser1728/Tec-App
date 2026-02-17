@@ -66,7 +66,7 @@ app.use('*', (req, res) => {
 });
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Auth Service Error:', err);
   res.status(500).json({
     success: false,
