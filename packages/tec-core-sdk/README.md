@@ -309,7 +309,7 @@ const result = await client.post<Response>('/api/action', { key: 'value' });
 │  ┌─────────────────────────────┐   │
 │  │   Auth Service (Port 4001)  │   │
 │  │   Wallet Service (Port 4002)│   │
-│  │   Payment Service (Port 4003│   │
+│  │   Payment Service (Port 4003)   │
 │  └─────────────────────────────┘   │
 └───────────────┬─────────────────────┘
                 │

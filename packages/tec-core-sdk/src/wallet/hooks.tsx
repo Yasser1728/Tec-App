@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
 import { TecAuthContext } from '../auth/provider';
 import { TecWalletSDK } from './index';
-import { TecApiClient } from '../client';
 import type { Wallet, WalletBalance, Transaction, TransactionHistoryOptions, PaginatedResponse } from '../types';
 
 interface WalletState {
@@ -19,11 +18,7 @@ export const useTecWallet = () => {
     throw new Error('useTecWallet must be used within <TecAuthProvider>');
   }
 
-  const [walletSDK] = useState(() => {
-    // Access the client from auth context's sdk
-    const config = { apiUrl: '', appName: '' }; // Will be overridden
-    return new TecWalletSDK(new TecApiClient(config));
-  });
+  const [walletSDK] = useState(() => new TecWalletSDK(authContext.client));
 
   const [state, setState] = useState<WalletState>({
     wallets: [],

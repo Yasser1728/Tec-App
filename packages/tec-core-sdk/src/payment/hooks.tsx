@@ -3,7 +3,6 @@
 import { useState, useCallback, useContext } from 'react';
 import { TecAuthContext } from '../auth/provider';
 import { TecPaymentSDK } from './index';
-import { TecApiClient } from '../client';
 import { isPiBrowser } from '../utils/pi-browser';
 import type { PaymentResult, A2UPaymentRequest } from '../types';
 
@@ -20,10 +19,7 @@ export const useTecPayment = () => {
     throw new Error('useTecPayment must be used within <TecAuthProvider>');
   }
 
-  const [paymentSDK] = useState(() => {
-    const config = { apiUrl: '', appName: '' };
-    return new TecPaymentSDK(new TecApiClient(config));
-  });
+  const [paymentSDK] = useState(() => new TecPaymentSDK(authContext.client));
 
   const [state, setState] = useState<PaymentHookState>({
     isProcessing: false,

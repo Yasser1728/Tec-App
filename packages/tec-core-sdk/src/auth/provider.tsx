@@ -16,6 +16,7 @@ export interface TecAuthContextValue {
   login: () => Promise<TecAuthResponse>;
   logout: () => void;
   sdk: TecAuthSDK;
+  client: TecApiClient;
 }
 
 export const TecAuthContext = createContext<TecAuthContextValue | undefined>(undefined);
@@ -88,6 +89,7 @@ export function TecAuthProvider({ children, config }: TecAuthProviderProps) {
     login,
     logout,
     sdk: authSDK,
+    client,
   };
 
   return <TecAuthContext.Provider value={value}>{children}</TecAuthContext.Provider>;
