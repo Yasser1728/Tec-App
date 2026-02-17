@@ -58,6 +58,8 @@ export const loginWithPi = async (): Promise<TecAuthResponse> => {
     createdAt: new Date().toISOString(),
   };
 
+  // Note: isNewUser is hardcoded to true for testnet demo
+  // In production, this should be determined by checking if user exists in database
   const data: TecAuthResponse = {
     success: true,
     isNewUser: true,

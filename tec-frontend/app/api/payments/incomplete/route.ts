@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const payment = await response.json();
 
     // If the payment has a txid but isn't completed, complete it
-    if (payment.transaction && payment.transaction.txid && payment.status.developer_completed === false) {
+    if (payment.transaction && payment.transaction.txid && !payment.status.developer_completed) {
       const completeResponse = await fetch(`${PI_API_URL}/v2/payments/${paymentId}/complete`, {
         method: 'POST',
         headers: {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // If payment is not approved yet, approve it
-    if (payment.status.developer_approved === false) {
+    if (!payment.status.developer_approved) {
       const approveResponse = await fetch(`${PI_API_URL}/v2/payments/${paymentId}/approve`, {
         method: 'POST',
         headers: {
