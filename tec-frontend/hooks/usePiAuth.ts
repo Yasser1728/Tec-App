@@ -47,11 +47,12 @@ export const usePiAuth = () => {
         error: null,
       }));
       return result;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'فشل تسجيل الدخول';
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: err.message || 'فشل تسجيل الدخول',
+        error: message,
       }));
       throw err;
     }

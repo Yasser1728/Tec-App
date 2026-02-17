@@ -7,9 +7,17 @@ declare global {
     Pi: {
       authenticate: (
         scopes: string[],
-        onIncompletePayment: (payment: any) => void
+        onIncompletePayment: (payment: unknown) => void
       ) => Promise<PiAuthResult>;
-      createPayment: (paymentData: any, callbacks: any) => void;
+      createPayment: (
+        paymentData: { amount: number; memo: string; metadata: Record<string, unknown> },
+        callbacks: {
+          onReadyForServerApproval: (paymentId: string) => void;
+          onReadyForServerCompletion: (paymentId: string, txid: string) => void;
+          onCancel: (paymentId: string) => void;
+          onError: (error: Error, payment?: unknown) => void;
+        }
+      ) => void;
     };
   }
 }
