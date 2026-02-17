@@ -283,6 +283,10 @@ docker-compose up -d
 
 MIT License - see LICENSE file for details
 
+## 🐛 Troubleshooting
+
+Encountering issues with GitHub Actions or workflows? Check our [Troubleshooting Guide](.github/TROUBLESHOOTING.md) for common problems and solutions.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
