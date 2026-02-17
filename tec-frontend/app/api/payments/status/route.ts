@@ -23,13 +23,16 @@ export async function GET(request: NextRequest) {
       // Check if it's a sandbox payment
       const isSandboxPayment = paymentId.startsWith('sandbox_');
       
+      // Generate deterministic txid based on paymentId for consistency
+      const mockTxid = isSandboxPayment ? `tx_${paymentId.slice(8)}` : undefined;
+      
       return NextResponse.json({
         success: true,
         paymentId,
         status: isSandboxPayment ? 'completed' : 'pending',
         amount: 1,
         memo: 'TEC Demo Payment (Sandbox)',
-        txid: isSandboxPayment ? `sandbox_tx_${Date.now()}` : undefined,
+        txid: mockTxid,
         data: {
           identifier: paymentId,
           amount: 1,
@@ -42,7 +45,7 @@ export async function GET(request: NextRequest) {
             user_cancelled: false,
           },
           transaction: isSandboxPayment ? {
-            txid: `sandbox_tx_${Date.now()}`,
+            txid: mockTxid,
             verified: true,
           } : null,
         }

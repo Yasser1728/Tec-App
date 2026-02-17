@@ -93,16 +93,17 @@ export const createU2APayment = (
             });
             
             if (!res.ok) {
-              const errorText = await res.text();
-              console.error('[Pi Payment] Server approval failed:', errorText);
-              throw new Error(`فشلت الموافقة / Approval failed: ${errorText}`);
+              const errorData = await res.json().catch(() => ({ message: 'Approval failed' }));
+              const errorMsg = errorData.message || 'فشلت الموافقة / Approval failed';
+              console.error('[Pi Payment] Server approval failed:', errorMsg);
+              throw new Error(errorMsg);
             }
             
             const result = await res.json();
             console.log('[Pi Payment] Server approval successful:', result);
           } catch (err) {
             console.error('[Pi Payment] Server approval error:', err);
-            // Don't reject here - let Pi SDK handle the flow
+            // Let the SDK handle the failure - it will call onError
           }
         },
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
@@ -115,9 +116,10 @@ export const createU2APayment = (
             });
             
             if (!res.ok) {
-              const errorText = await res.text();
-              console.error('[Pi Payment] Server completion failed:', errorText);
-              throw new Error(`فشل الإكمال / Completion failed: ${errorText}`);
+              const errorData = await res.json().catch(() => ({ message: 'Completion failed' }));
+              const errorMsg = errorData.message || 'فشل الإكمال / Completion failed';
+              console.error('[Pi Payment] Server completion failed:', errorMsg);
+              throw new Error(errorMsg);
             }
             
             const result = await res.json();
