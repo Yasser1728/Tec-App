@@ -10,6 +10,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isNewUser: boolean;
   error: string | null;
+  errorType: 'not_pi_browser' | 'auth_failed' | 'timeout' | 'storage' | null;
   isPiBrowserEnv: boolean;
 }
 
@@ -20,6 +21,7 @@ export const usePiAuth = () => {
     isAuthenticated: false,
     isNewUser: false,
     error: null,
+    errorType: null,
     isPiBrowserEnv: false,
   });
 
@@ -66,7 +68,7 @@ export const usePiAuth = () => {
   }, []);
 
   const login = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setState(prev => ({ ...prev, isLoading: true, error: null, errorType: null }));
     try {
       const result = await loginWithPi();
       setState(prev => ({
@@ -76,14 +78,27 @@ export const usePiAuth = () => {
         isNewUser: result.isNewUser,
         isLoading: false,
         error: null,
+        errorType: null,
       }));
       return result;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'فشل تسجيل الدخول';
+      
+      // Determine error type based on error message
+      let errorType: AuthState['errorType'] = 'auth_failed';
+      if (message.includes('Pi Browser') || message.includes('متصفح Pi')) {
+        errorType = 'not_pi_browser';
+      } else if (message.includes('timed out') || message.includes('انتهت مهلة')) {
+        errorType = 'timeout';
+      } else if (message.includes('localStorage') || message.includes('بيانات المصادقة')) {
+        errorType = 'storage';
+      }
+      
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: message,
+        errorType,
       }));
       throw err;
     }
@@ -96,6 +111,8 @@ export const usePiAuth = () => {
       user: null,
       isAuthenticated: false,
       isNewUser: false,
+      error: null,
+      errorType: null,
     }));
   }, []);
 

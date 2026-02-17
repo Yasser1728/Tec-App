@@ -9,15 +9,20 @@ import styles from './PiIntegration.module.css';
 type PaymentState = 'idle' | 'processing' | 'approving' | 'completing' | 'success' | 'error' | 'cancelled';
 
 export default function PiIntegration() {
-  const { user, isAuthenticated, login } = usePiAuth();
-  const { isProcessing, lastPayment, testSDK, payDemoPi } = usePiPayment();
+  const { user, isAuthenticated, isLoading, isPiBrowserEnv, error: authError, errorType: authErrorType, login } = usePiAuth();
+  const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, testSDK, payDemoPi } = usePiPayment();
   const { t } = useTranslation();
   const [paymentState, setPaymentState] = useState<PaymentState>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleConnect = async () => {
     if (!isAuthenticated) {
-      await login();
+      try {
+        await login();
+      } catch (err) {
+        // Error is already set in usePiAuth state
+        console.error('[PiIntegration] Login error:', err);
+      }
     }
   };
 
@@ -52,7 +57,10 @@ export default function PiIntegration() {
     } catch (err) {
       console.error('[PiIntegration] Payment error:', err);
       setPaymentState('error');
-      setErrorMessage(err instanceof Error ? err.message : 'حدث خطأ غير متوقع / Unexpected error occurred');
+      
+      // Use error from hook state if available for better context
+      const message = paymentError || (err instanceof Error ? err.message : 'حدث خطأ غير متوقع / Unexpected error occurred');
+      setErrorMessage(message);
     }
   };
 
@@ -80,6 +88,86 @@ export default function PiIntegration() {
     }
   };
 
+  const getErrorMessageWithInstructions = () => {
+    // Check for payment errors first
+    if (paymentState === 'error' && paymentErrorType) {
+      switch (paymentErrorType) {
+        case 'not_pi_browser':
+          return (
+            <>
+              <div>❌ {errorMessage}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                📱 يرجى فتح التطبيق داخل متصفح Pi Network<br/>
+                📱 Please open the app inside Pi Browser
+              </div>
+            </>
+          );
+        case 'timeout':
+          return (
+            <>
+              <div>⏱️ {errorMessage}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى<br/>
+                🔄 Please check your internet connection and try again
+              </div>
+            </>
+          );
+        case 'approval_failed':
+          return (
+            <>
+              <div>❌ {errorMessage}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                ⚠️ فشلت الموافقة على الدفع من الخادم<br/>
+                ⚠️ Server approval failed - payment may be incomplete
+              </div>
+            </>
+          );
+        default:
+          return <div>❌ {errorMessage}</div>;
+      }
+    }
+    
+    // Check for auth errors
+    if (authError && authErrorType) {
+      switch (authErrorType) {
+        case 'not_pi_browser':
+          return (
+            <>
+              <div>❌ {authError}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                📱 افتح تطبيق Pi Network → التطبيقات → TEC App<br/>
+                📱 Open Pi Network app → Apps → TEC App
+              </div>
+            </>
+          );
+        case 'timeout':
+          return (
+            <>
+              <div>⏱️ {authError}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى<br/>
+                🔄 Please check your internet connection and try again
+              </div>
+            </>
+          );
+        case 'storage':
+          return (
+            <>
+              <div>❌ {authError}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                🔒 يرجى تعطيل وضع التصفح الخاص<br/>
+                🔒 Please disable private browsing mode
+              </div>
+            </>
+          );
+        default:
+          return <div>❌ {authError}</div>;
+      }
+    }
+    
+    return <div>❌ {errorMessage}</div>;
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -87,11 +175,49 @@ export default function PiIntegration() {
           🌐 {t.dashboard.piIntegration.title}
         </h3>
 
-        {!isAuthenticated ? (
-          <button className={`${styles.btn} ${styles.btnConnect}`} onClick={handleConnect}>
-            {t.dashboard.piIntegration.connectBtn}
+        {/* Not in Pi Browser Warning */}
+        {!isLoading && !isPiBrowserEnv && !isAuthenticated && (
+          <div className={styles.warning}>
+            <div style={{ marginBottom: '12px' }}>
+              ⚠️ <strong>غير متصل بمتصفح Pi / Not in Pi Browser</strong>
+            </div>
+            <div style={{ fontSize: '0.9em', lineHeight: '1.6' }}>
+              📱 <strong>تعليمات / Instructions:</strong><br/>
+              1. افتح تطبيق Pi Network على هاتفك<br/>
+              &nbsp;&nbsp;&nbsp;Open Pi Network app on your phone<br/>
+              2. انتقل إلى التطبيقات → TEC App<br/>
+              &nbsp;&nbsp;&nbsp;Go to Apps → TEC App<br/>
+              3. قم بتسجيل الدخول باستخدام حساب Pi الخاص بك<br/>
+              &nbsp;&nbsp;&nbsp;Login with your Pi account
+            </div>
+          </div>
+        )}
+
+        {/* Authentication Error */}
+        {authError && (
+          <div className={styles.error}>
+            <div className={styles.errorMessage}>
+              {getErrorMessageWithInstructions()}
+            </div>
+            <button 
+              className={`${styles.btn} ${styles.btnRetry}`} 
+              onClick={handleConnect}
+              disabled={isLoading}
+            >
+              {isLoading ? '⏳ جاري التحميل... / Loading...' : '🔄 إعادة المحاولة / Retry'}
+            </button>
+          </div>
+        )}
+
+        {!isAuthenticated && !authError ? (
+          <button 
+            className={`${styles.btn} ${styles.btnConnect}`} 
+            onClick={handleConnect}
+            disabled={isLoading || !isPiBrowserEnv}
+          >
+            {isLoading ? '⏳ جاري التحميل... / Loading...' : t.dashboard.piIntegration.connectBtn}
           </button>
-        ) : (
+        ) : isAuthenticated ? (
           <>
             <div className={styles.authenticated}>
               <span className={styles.checkmark}>✅</span>
@@ -155,7 +281,7 @@ export default function PiIntegration() {
             {paymentState === 'error' && (
               <div className={styles.error}>
                 <div className={styles.errorMessage}>
-                  ❌ {getPaymentStatusMessage()}
+                  {getErrorMessageWithInstructions()}
                 </div>
                 <button 
                   className={`${styles.btn} ${styles.btnRetry}`} 
@@ -173,7 +299,7 @@ export default function PiIntegration() {
               </div>
             )}
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
