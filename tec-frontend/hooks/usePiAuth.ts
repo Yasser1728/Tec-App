@@ -38,15 +38,48 @@ export const usePiAuth = () => {
       isPiBrowserEnv: piDetected,
     }));
 
-    // If Pi SDK not detected yet and no stored user, poll for it (it loads async)
-    // Skip polling if user is already authenticated - they don't need Pi SDK for initial load
+    // If Pi SDK not detected yet and no stored user, listen for events and poll as fallback
+    // Skip if user is already authenticated - they don't need Pi SDK for initial load
     if (!piDetected && !stored) {
+      let eventHandled = false;
+      
+      // Event-based approach (preferred)
+      const handlePiSdkReady = () => {
+        console.log('[TEC usePiAuth] Pi SDK ready event received');
+        eventHandled = true;
+        setState(prev => ({
+          ...prev,
+          isPiBrowserEnv: true,
+          isLoading: false,
+        }));
+      };
+      
+      const handlePiSdkError = () => {
+        console.error('[TEC usePiAuth] Pi SDK error event received');
+        eventHandled = true;
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isPiBrowserEnv: false,
+        }));
+      };
+      
+      window.addEventListener('pi-sdk-ready', handlePiSdkReady);
+      window.addEventListener('pi-sdk-error', handlePiSdkError);
+      
+      // Polling as fallback (in case events are missed)
       let attempts = 0;
       const maxAttempts = 25; // 25 * 200ms = 5 seconds max
       
       const interval = setInterval(() => {
+        if (eventHandled) {
+          clearInterval(interval);
+          return;
+        }
+        
         attempts++;
         if (isPiBrowser()) {
+          console.log('[TEC usePiAuth] Pi SDK detected via polling');
           clearInterval(interval);
           setState(prev => ({
             ...prev,
@@ -54,6 +87,7 @@ export const usePiAuth = () => {
             isLoading: false,
           }));
         } else if (attempts >= maxAttempts) {
+          console.log('[TEC usePiAuth] Max polling attempts reached');
           clearInterval(interval);
           setState(prev => ({
             ...prev,
@@ -63,7 +97,11 @@ export const usePiAuth = () => {
         }
       }, 200);
 
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('pi-sdk-ready', handlePiSdkReady);
+        window.removeEventListener('pi-sdk-error', handlePiSdkError);
+      };
     }
   }, []);
 
