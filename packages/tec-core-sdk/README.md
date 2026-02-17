@@ -18,6 +18,7 @@ yarn add @tec/core-sdk
 
 ### 1. Wrap Your App with TecAuthProvider
 
+{% raw %}
 ```tsx
 import { TecAuthProvider } from '@tec/core-sdk';
 
@@ -38,6 +39,7 @@ function App() {
   );
 }
 ```
+{% endraw %}
 
 ### 2. Use Authentication
 
