@@ -18,7 +18,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           {`
             function initPi() {
               if (typeof Pi !== 'undefined') {
-                const sandbox = "${process.env.NEXT_PUBLIC_PI_SANDBOX || 'false'}" !== "false";
+                const sandbox = "${process.env.NEXT_PUBLIC_PI_SANDBOX || 'false'}" === "true";
                 Pi.init({ version: "2.0", sandbox: sandbox });
                 console.log("Pi SDK initialized (sandbox: " + sandbox + ")");
                 window.dispatchEvent(new Event('pi-sdk-ready'));

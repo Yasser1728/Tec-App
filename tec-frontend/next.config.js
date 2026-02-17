@@ -26,10 +26,6 @@ const nextConfig = {
             value: 'nosniff',
           },
           {
-            key: 'X-Frame-Options',
-            value: 'ALLOWALL',
-          },
-          {
             key: 'Access-Control-Allow-Origin',
             value: '*',
           },
