@@ -1,0 +1,14 @@
+# GitHub Copilot Code Review Configuration
+# This file disables Copilot Code Review to prevent 401 authentication errors
+# when attempting to download private GitHub artifacts that require special permissions.
+
+# Disable Copilot Code Review
+enabled: false
+
+# Reason: The Copilot Code Review service attempts to download tools from private
+# GitHub repositories (github/copilot-code-review-published-artifacts and 
+# github/autovalidate-cli-binaries) which require authentication tokens that
+# the standard GITHUB_TOKEN doesn't have access to.
+#
+# If you need to re-enable this in the future, change enabled to true and ensure
+# the repository has the necessary permissions configured.
