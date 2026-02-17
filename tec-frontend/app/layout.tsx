@@ -16,11 +16,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
         <Script id="pi-init" strategy="afterInteractive">
           {`
+            var sandboxMode = ${process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false'};
             if (typeof Pi !== 'undefined') {
-              Pi.init({ version: "2.0", sandbox: true });
+              Pi.init({ version: "2.0", sandbox: sandboxMode });
             } else {
               document.addEventListener('PiSDKReady', function() {
-                Pi.init({ version: "2.0", sandbox: true });
+                Pi.init({ version: "2.0", sandbox: sandboxMode });
               });
             }
           `}
