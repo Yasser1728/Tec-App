@@ -49,6 +49,16 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    
+    // Validate response structure
+    if (!data.identifier) {
+      console.error('Pi API response missing identifier:', data);
+      return NextResponse.json(
+        { success: false, message: 'Invalid response from Pi API: missing payment identifier' },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json({
       success: true,
       paymentId: data.identifier,
