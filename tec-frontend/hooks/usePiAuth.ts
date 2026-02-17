@@ -32,12 +32,13 @@ export const usePiAuth = () => {
       ...prev,
       user: stored,
       isAuthenticated: !!stored,
-      isLoading: !piDetected && !stored, // Keep loading if Pi not detected yet
+      isLoading: !piDetected && !stored, // Keep loading if Pi not detected yet and no stored user
       isPiBrowserEnv: piDetected,
     }));
 
-    // If Pi SDK not detected yet, poll for it (it loads async)
-    if (!piDetected) {
+    // If Pi SDK not detected yet and no stored user, poll for it (it loads async)
+    // Skip polling if user is already authenticated - they don't need Pi SDK for initial load
+    if (!piDetected && !stored) {
       let attempts = 0;
       const maxAttempts = 25; // 25 * 200ms = 5 seconds max
       
@@ -62,9 +63,6 @@ export const usePiAuth = () => {
 
       return () => clearInterval(interval);
     }
-    
-    // Return no-op cleanup when Pi is already detected
-    return () => {};
   }, []);
 
   const login = useCallback(async () => {
