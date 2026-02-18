@@ -6,8 +6,9 @@ export const metadata = {
   description: 'A complete ecosystem of 24 apps built on Pi Network',
 };
 
+const piSandbox = process.env.NEXT_PUBLIC_PI_SANDBOX === 'true';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const piSandbox = process.env.NEXT_PUBLIC_PI_SANDBOX === 'true';
   return (
     <html lang="en" dir="ltr">
       <head>
