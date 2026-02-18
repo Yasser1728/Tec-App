@@ -38,8 +38,33 @@ const handleIncompletePayment = async (payment: unknown) => {
   }
 };
 
+// Wait for Pi SDK to be ready
+const waitForPiSDK = (timeout = 10000): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (typeof window !== 'undefined' && typeof window.Pi !== 'undefined') {
+      resolve();
+      return;
+    }
+    
+    const timer = setTimeout(() => {
+      window.removeEventListener('tec-pi-ready', onReady);
+      reject(new Error('Pi SDK failed to load. Please refresh and try again.'));
+    }, timeout);
+    
+    const onReady = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    
+    window.addEventListener('tec-pi-ready', onReady, { once: true });
+  });
+};
+
 // Wrap authenticate with timeout
-const authenticateWithTimeout = (timeout = 30000): Promise<PiAuthResult> => {
+const authenticateWithTimeout = async (timeout = 30000): Promise<PiAuthResult> => {
+  // First wait for Pi SDK to be ready
+  await waitForPiSDK();
+  
   return new Promise((resolve, reject) => {
     // Debug logging
     console.log('[TEC Pi Auth] Starting authentication...');

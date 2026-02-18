@@ -13,42 +13,59 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       <head>
         <title>TEC App — The Elite Consortium</title>
         <meta name="description" content="A complete ecosystem of 24 apps built on Pi Network" />
-        <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
-        <Script id="pi-init" strategy="beforeInteractive">
+      </head>
+      <body>
+        {children}
+        <Script 
+          src="https://sdk.minepi.com/pi-sdk.js" 
+          strategy="afterInteractive"
+          onLoad={() => {
+            console.log('[TEC] Pi SDK script loaded');
+          }}
+          onError={() => {
+            console.error('[TEC] Pi SDK script failed to load');
+          }}
+        />
+        <Script id="pi-init" strategy="afterInteractive">
           {`
-            function initPi() {
-              if (typeof Pi !== 'undefined') {
-                const sandbox = ${process.env.NEXT_PUBLIC_PI_SANDBOX === 'true' ? 'true' : 'false'};
-                Pi.init({ version: "2.0", sandbox: sandbox });
-                console.log("[TEC] Pi SDK initialized — sandbox:", sandbox);
-                window.__PI_SANDBOX = sandbox;
-                window.dispatchEvent(new Event('pi-sdk-ready'));
-              } else {
-                console.error("[TEC] Pi SDK not available in initPi()");
-              }
-            }
-            if (typeof Pi !== 'undefined') {
-              initPi();
-            } else {
-              console.log("[TEC] Pi SDK not loaded yet, waiting...");
-              let checkPi = setInterval(function() {
+            (function() {
+              var MAX_WAIT = 15000;
+              var POLL_INTERVAL = 200;
+              
+              function initPi() {
                 if (typeof Pi !== 'undefined') {
-                  clearInterval(checkPi);
-                  clearTimeout(timeoutId);
-                  console.log("[TEC] Pi SDK loaded after polling");
-                  initPi();
+                  try {
+                    Pi.init({ version: "2.0", sandbox: true });
+                    console.log("[TEC] Pi SDK initialized successfully (sandbox: true)");
+                    window.__TEC_PI_READY = true;
+                    window.dispatchEvent(new Event('tec-pi-ready'));
+                  } catch(e) {
+                    console.error("[TEC] Pi.init() failed:", e);
+                    window.dispatchEvent(new CustomEvent('tec-pi-error', { detail: e }));
+                  }
                 }
-              }, 100);
-              let timeoutId = setTimeout(function() {
-                clearInterval(checkPi);
-                console.error("[TEC] Pi SDK failed to load after 10 seconds");
-                window.dispatchEvent(new Event('pi-sdk-error'));
-              }, 10000);
-            }
+              }
+
+              if (typeof Pi !== 'undefined') {
+                initPi();
+              } else {
+                var elapsed = 0;
+                var poll = setInterval(function() {
+                  elapsed += POLL_INTERVAL;
+                  if (typeof Pi !== 'undefined') {
+                    clearInterval(poll);
+                    initPi();
+                  } else if (elapsed >= MAX_WAIT) {
+                    clearInterval(poll);
+                    console.error("[TEC] Pi SDK not available after " + MAX_WAIT + "ms");
+                    window.dispatchEvent(new Event('tec-pi-error'));
+                  }
+                }, POLL_INTERVAL);
+              }
+            })();
           `}
         </Script>
-      </head>
-      <body>{children}</body>
+      </body>
     </html>
   );
 }
