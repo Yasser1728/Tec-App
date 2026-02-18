@@ -13,20 +13,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       <head>
         <title>TEC App — The Elite Consortium</title>
         <meta name="description" content="A complete ecosystem of 24 apps built on Pi Network" />
-      </head>
-      <body>
-        {children}
         <Script 
           src="https://sdk.minepi.com/pi-sdk.js" 
-          strategy="afterInteractive"
-          onLoad={() => {
-            console.log('[TEC] Pi SDK script loaded');
-          }}
-          onError={() => {
-            console.error('[TEC] Pi SDK script failed to load');
-          }}
+          strategy="beforeInteractive"
         />
-        <Script id="pi-init" strategy="afterInteractive">
+        <Script id="pi-init" strategy="beforeInteractive">
           {`
             (function() {
               var MAX_WAIT = 15000;
@@ -35,8 +26,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               function initPi() {
                 if (typeof Pi !== 'undefined') {
                   try {
-                    Pi.init({ version: "2.0", sandbox: true });
-                    console.log("[TEC] Pi SDK initialized successfully (sandbox: true)");
+                    var sandbox = ${process.env.NEXT_PUBLIC_PI_SANDBOX === 'true' ? 'true' : 'false'};
+                    Pi.init({ version: "2.0", sandbox: sandbox });
+                    console.log("[TEC] Pi SDK initialized successfully (sandbox: " + sandbox + ")");
                     window.__TEC_PI_READY = true;
                     window.dispatchEvent(new Event('tec-pi-ready'));
                   } catch(e) {
@@ -65,6 +57,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             })();
           `}
         </Script>
+      </head>
+      <body>
+        {children}
       </body>
     </html>
   );
