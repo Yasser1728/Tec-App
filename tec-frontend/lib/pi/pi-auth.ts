@@ -13,6 +13,7 @@ declare global {
       ) => void;
     };
     __PI_SANDBOX?: boolean;
+    __TEC_PI_READY?: boolean;
   }
 }
 

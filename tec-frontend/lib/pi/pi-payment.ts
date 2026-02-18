@@ -110,14 +110,25 @@ export const createU2APayment = async (
         onReadyForServerApproval: async (paymentId: string) => {
           if (paymentTimedOut) return;
 
+          // Dispatch diagnostics event
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('tec-payment-approval', { 
+              detail: { paymentId, timestamp: Date.now() } 
+            }));
+          }
+
           // Validate paymentId format before sending to server
           const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
           if (!paymentIdRegex.test(paymentId)) {
             console.error('[Pi Payment] Invalid paymentId format:', paymentId);
             clearPaymentTimer();
-            reject(new Error(
-              'معرف الدفع غير صالح / Invalid payment ID format'
-            ));
+            const error = new Error('معرف الدفع غير صالح / Invalid payment ID format');
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('tec-payment-error', { 
+                detail: { message: error.message, phase: 'approval', paymentId } 
+              }));
+            }
+            reject(error);
             return;
           }
 
@@ -135,7 +146,13 @@ export const createU2APayment = async (
               console.error('[Pi Payment] Server approval failed:', errorMsg);
               console.warn('[Pi Payment] Incomplete payment may remain:', paymentId);
               clearPaymentTimer();
-              reject(new Error(errorMsg));
+              const error = new Error(errorMsg);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('tec-payment-error', { 
+                  detail: { message: error.message, phase: 'approval', paymentId } 
+                }));
+              }
+              reject(error);
               return;
             }
             
@@ -146,20 +163,37 @@ export const createU2APayment = async (
             console.warn('[Pi Payment] Incomplete payment may remain:', paymentId);
             const errorMessage = err instanceof Error ? err.message : 'فشلت الموافقة / Approval failed';
             clearPaymentTimer();
-            reject(new Error(errorMessage));
+            const error = new Error(errorMessage);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('tec-payment-error', { 
+                detail: { message: error.message, phase: 'approval', paymentId } 
+              }));
+            }
+            reject(error);
           }
         },
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
           if (paymentTimedOut) return;
+
+          // Dispatch diagnostics event
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('tec-payment-completion', { 
+              detail: { paymentId, txid, timestamp: Date.now() } 
+            }));
+          }
 
           // Validate paymentId format before sending to server
           const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
           if (!paymentIdRegex.test(paymentId)) {
             console.error('[Pi Payment] Invalid paymentId format in completion:', paymentId);
             clearPaymentTimer();
-            reject(new Error(
-              'معرف الدفع غير صالح / Invalid payment ID format'
-            ));
+            const error = new Error('معرف الدفع غير صالح / Invalid payment ID format');
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('tec-payment-error', { 
+                detail: { message: error.message, phase: 'completion', paymentId } 
+              }));
+            }
+            reject(error);
             return;
           }
 
@@ -168,9 +202,13 @@ export const createU2APayment = async (
           if (!txidRegex.test(txid)) {
             console.error('[Pi Payment] Invalid txid format:', txid);
             clearPaymentTimer();
-            reject(new Error(
-              'معرف المعاملة غير صالح / Invalid transaction ID format'
-            ));
+            const error = new Error('معرف المعاملة غير صالح / Invalid transaction ID format');
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('tec-payment-error', { 
+                detail: { message: error.message, phase: 'completion', paymentId, txid } 
+              }));
+            }
+            reject(error);
             return;
           }
 
@@ -187,7 +225,13 @@ export const createU2APayment = async (
               const errorMsg = errorData.message || 'فشل الإكمال / Completion failed';
               console.error('[Pi Payment] Server completion failed:', errorMsg);
               clearPaymentTimer();
-              reject(new Error(errorMsg));
+              const error = new Error(errorMsg);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('tec-payment-error', { 
+                  detail: { message: error.message, phase: 'completion', paymentId, txid } 
+                }));
+              }
+              reject(error);
               return;
             }
             
@@ -208,7 +252,13 @@ export const createU2APayment = async (
           } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'فشلت الدفعة / Payment failed';
             clearPaymentTimer();
-            reject(new Error(errorMessage));
+            const error = new Error(errorMessage);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('tec-payment-error', { 
+                detail: { message: error.message, phase: 'completion', paymentId, txid } 
+              }));
+            }
+            reject(error);
           }
         },
         onCancel: () => {

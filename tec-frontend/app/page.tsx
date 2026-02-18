@@ -6,6 +6,7 @@ import { usePiAuth } from '@/hooks/usePiAuth';
 import { usePiPayment } from '@/hooks/usePiPayment';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import DiagnosticsPanel from '@/components/DiagnosticsPanel';
 import styles from './page.module.css';
 
 type PaymentState = 'idle' | 'processing' | 'success' | 'error' | 'cancelled';
@@ -187,6 +188,9 @@ export default function HomePage() {
               )}
             </>
           )}
+
+          {/* Payment Diagnostics Panel - Only shown in Testnet */}
+          <DiagnosticsPanel />
 
           {/* Pi Payment Buttons */}
           <div className={styles.piButtonGroup}>
