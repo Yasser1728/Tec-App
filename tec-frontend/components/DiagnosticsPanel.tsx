@@ -25,10 +25,19 @@ export default function DiagnosticsPanel() {
     lastCompletionPaymentId: null,
     lastCompletionTxid: null,
     errors: [],
-    isSandbox: process.env.NEXT_PUBLIC_PI_SANDBOX === 'true',
+    isSandbox: false, // Will be set in useEffect
   });
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
+    // Set sandbox mode based on environment variable
+    setDiagnostics(prev => ({ 
+      ...prev, 
+      isSandbox: process.env.NEXT_PUBLIC_PI_SANDBOX === 'true' 
+    }));
+
     // Check if SDK is initialized
     const checkSdkStatus = () => {
       const sdkInitialized = typeof window !== 'undefined' && 
