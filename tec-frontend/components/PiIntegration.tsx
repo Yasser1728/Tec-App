@@ -191,7 +191,8 @@ export default function PiIntegration() {
           </div>
         )}
 
-        {!isAuthenticated && !authError ? (
+        {/* Show Connect button when not authenticated and no error */}
+        {!isAuthenticated && !authError && (
           <button 
             className={`${styles.btn} ${styles.btnConnect}`} 
             onClick={handleConnect}
@@ -199,89 +200,94 @@ export default function PiIntegration() {
           >
             {isLoading ? '⏳ جاري التحميل... / Loading...' : t.dashboard.piIntegration.connectBtn}
           </button>
-        ) : isAuthenticated ? (
-          <>
-            <div className={styles.authenticated}>
-              <span className={styles.checkmark}>✅</span>
-              <span>{t.dashboard.piIntegration.authenticated} <strong>@{user?.piUsername}</strong></span>
+        )}
+
+        {/* Show authenticated user info when logged in */}
+        {isAuthenticated && (
+          <div className={styles.authenticated}>
+            <span className={styles.checkmark}>✅</span>
+            <span>{t.dashboard.piIntegration.authenticated} <strong>@{user?.piUsername}</strong></span>
+          </div>
+        )}
+
+        {/* Always show the mainnet/testnet indicator */}
+        <div className={styles.mainnetIndicator}>
+          🌐 {process.env.NEXT_PUBLIC_PI_SANDBOX === 'true' ? 'Testnet Mode: Demo payments' : 'Mainnet Mode: Real Pi payments'}
+        </div>
+
+        {/* Always show the button group - Test SDK works without auth */}
+        <div className={styles.buttonGroup}>
+          <button 
+            className={`${styles.btn} ${styles.btnTest}`} 
+            onClick={handleTestSdk}
+          >
+            🖊️ {t.dashboard.piIntegration.testSdk}
+          </button>
+
+          <button 
+            className={`${styles.btn} ${styles.btnPay}`} 
+            onClick={handlePayDemo}
+            disabled={!isAuthenticated || isProcessing || paymentState === 'processing'}
+          >
+            {!isAuthenticated ? (
+              <span>🔒 سجّل الدخول أولاً / Login first</span>
+            ) : isProcessing || paymentState === 'processing' ? (
+              <span>⏳ {t.dashboard.piIntegration.processing}</span>
+            ) : (
+              <span>💎 {t.dashboard.piIntegration.payDemo}</span>
+            )}
+          </button>
+        </div>
+
+        {/* Payment Status Messages */}
+        {paymentState === 'success' && lastPayment && (
+          <div className={styles.success}>
+            <div className={styles.successMessage}>
+              ✅ {getPaymentStatusMessage()}
             </div>
+            {lastPayment.txid && (
+              <div className={styles.txidInfo}>
+                <small>
+                  txid: <code>{lastPayment.txid}</code>
+                </small>
+              </div>
+            )}
+            {lastPayment.paymentId && (
+              <div className={styles.paymentIdInfo}>
+                <small>
+                  Payment ID: <code>{lastPayment.paymentId}</code>
+                </small>
+              </div>
+            )}
+          </div>
+        )}
 
-            <div className={styles.mainnetIndicator}>
-              🌐 {process.env.NEXT_PUBLIC_PI_SANDBOX === 'true' ? 'Testnet Mode: Demo payments' : 'Mainnet Mode: Real Pi payments'}
+        {paymentState === 'cancelled' && (
+          <div className={styles.warning}>
+            ⚠️ {getPaymentStatusMessage()}
+          </div>
+        )}
+
+        {paymentState === 'error' && (
+          <div className={styles.error}>
+            <div className={styles.errorMessage}>
+              {getErrorMessageWithInstructions()}
             </div>
+            <button 
+              className={`${styles.btn} ${styles.btnRetry}`} 
+              onClick={handleRetry}
+            >
+              🔄 إعادة المحاولة / Retry
+            </button>
+          </div>
+        )}
 
-            <div className={styles.buttonGroup}>
-              <button 
-                className={`${styles.btn} ${styles.btnTest}`} 
-                onClick={handleTestSdk}
-              >
-                🖊️ {t.dashboard.piIntegration.testSdk}
-              </button>
-
-              <button 
-                className={`${styles.btn} ${styles.btnPay}`} 
-                onClick={handlePayDemo}
-                disabled={isProcessing || paymentState === 'processing'}
-              >
-                {isProcessing || paymentState === 'processing' ? (
-                  <span>⏳ {t.dashboard.piIntegration.processing}</span>
-                ) : (
-                  <span>💎 {t.dashboard.piIntegration.payDemo}</span>
-                )}
-              </button>
-            </div>
-
-            {/* Payment Status Messages */}
-            {paymentState === 'success' && lastPayment && (
-              <div className={styles.success}>
-                <div className={styles.successMessage}>
-                  ✅ {getPaymentStatusMessage()}
-                </div>
-                {lastPayment.txid && (
-                  <div className={styles.txidInfo}>
-                    <small>
-                      txid: <code>{lastPayment.txid}</code>
-                    </small>
-                  </div>
-                )}
-                {lastPayment.paymentId && (
-                  <div className={styles.paymentIdInfo}>
-                    <small>
-                      Payment ID: <code>{lastPayment.paymentId}</code>
-                    </small>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {paymentState === 'cancelled' && (
-              <div className={styles.warning}>
-                ⚠️ {getPaymentStatusMessage()}
-              </div>
-            )}
-
-            {paymentState === 'error' && (
-              <div className={styles.error}>
-                <div className={styles.errorMessage}>
-                  {getErrorMessageWithInstructions()}
-                </div>
-                <button 
-                  className={`${styles.btn} ${styles.btnRetry}`} 
-                  onClick={handleRetry}
-                >
-                  🔄 إعادة المحاولة / Retry
-                </button>
-              </div>
-            )}
-
-            {(paymentState === 'processing' || paymentState === 'approving' || paymentState === 'completing') && (
-              <div className={styles.processing}>
-                <div className={styles.spinner}></div>
-                <div>{getPaymentStatusMessage()}</div>
-              </div>
-            )}
-          </>
-        ) : null}
+        {(paymentState === 'processing' || paymentState === 'approving' || paymentState === 'completing') && (
+          <div className={styles.processing}>
+            <div className={styles.spinner}></div>
+            <div>{getPaymentStatusMessage()}</div>
+          </div>
+        )}
       </div>
     </div>
   );
