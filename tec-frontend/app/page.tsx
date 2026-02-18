@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { usePiAuth } from '@/hooks/usePiAuth';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import PiIntegration from '@/components/PiIntegration';
 import styles from './page.module.css';
 
 export default function HomePage() {
@@ -98,6 +99,9 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Pi Integration - accessible even without auth */}
+      <PiIntegration />
 
       <section className={styles.appsSection}>
         <p className={styles.sectionLabel}>{t.home.ecosystem}</p>

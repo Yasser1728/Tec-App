@@ -6,13 +6,13 @@ export const metadata = {
   description: 'A complete ecosystem of 24 apps built on Pi Network',
 };
 
-const piSandbox = process.env.NEXT_PUBLIC_PI_SANDBOX === 'true';
+const piSandbox = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" dir="ltr">
       <head>
-        <script src="https://sdk.minepi.com/pi-sdk.js" defer></script>
+        <script src="https://sdk.minepi.com/pi-sdk.js"></script>
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             var MAX_WAIT = 15000;
