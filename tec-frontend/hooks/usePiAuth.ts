@@ -30,17 +30,23 @@ export const usePiAuth = () => {
     const stored = getStoredUser();
     const piDetected = isPiBrowser();
     
+    // Check if Pi SDK is already ready (event may have fired before component mounted)
+    // Both window.Pi and __TEC_PI_READY flag must be present for safety
+    const piAlreadyReady = typeof window !== 'undefined' && 
+                          typeof window.Pi !== 'undefined' && 
+                          (window as any).__TEC_PI_READY;
+    
     setState(prev => ({
       ...prev,
       user: stored,
       isAuthenticated: !!stored,
-      isLoading: !piDetected && !stored, // Keep loading if Pi not detected yet and no stored user
-      isPiBrowserEnv: piDetected,
+      isLoading: !piDetected && !stored && !piAlreadyReady, // Keep loading if Pi not detected yet and no stored user
+      isPiBrowserEnv: piDetected || piAlreadyReady,
     }));
 
     // If Pi SDK not detected yet and no stored user, listen for events and poll as fallback
     // Skip if user is already authenticated - they don't need Pi SDK for initial load
-    if (!piDetected && !stored) {
+    if (!piDetected && !stored && !piAlreadyReady) {
       let eventHandled = false;
       
       // Event-based approach (preferred)
@@ -64,8 +70,8 @@ export const usePiAuth = () => {
         }));
       };
       
-      window.addEventListener('pi-sdk-ready', handlePiSdkReady);
-      window.addEventListener('pi-sdk-error', handlePiSdkError);
+      window.addEventListener('tec-pi-ready', handlePiSdkReady);
+      window.addEventListener('tec-pi-error', handlePiSdkError);
       
       // Polling as fallback (in case events are missed)
       let attempts = 0;
@@ -99,8 +105,8 @@ export const usePiAuth = () => {
 
       return () => {
         clearInterval(interval);
-        window.removeEventListener('pi-sdk-ready', handlePiSdkReady);
-        window.removeEventListener('pi-sdk-error', handlePiSdkError);
+        window.removeEventListener('tec-pi-ready', handlePiSdkReady);
+        window.removeEventListener('tec-pi-error', handlePiSdkError);
       };
     }
   }, []);
