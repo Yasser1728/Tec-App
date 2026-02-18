@@ -26,7 +26,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               function initPi() {
                 if (typeof Pi !== 'undefined') {
                   try {
-                    var sandbox = ${process.env.NEXT_PUBLIC_PI_SANDBOX === 'true' ? 'true' : 'false'};
+                    var sandbox = ${process.env.NEXT_PUBLIC_PI_SANDBOX === 'true'};
                     Pi.init({ version: "2.0", sandbox: sandbox });
                     console.log("[TEC] Pi SDK initialized successfully (sandbox: " + sandbox + ")");
                     window.__TEC_PI_READY = true;
