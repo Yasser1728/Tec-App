@@ -16,6 +16,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validate paymentId format to prevent path traversal
+    const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!paymentIdRegex.test(paymentId)) {
+      console.error('[Payment Status] Invalid paymentId format:', paymentId);
+      return NextResponse.json(
+        { success: false, message: 'Invalid paymentId format' },
+        { status: 400 }
+      );
+    }
+
     // Sandbox mode fallback
     if (!PI_API_KEY && PI_SANDBOX) {
       console.log('[Sandbox] Returning mock payment status for:', paymentId);

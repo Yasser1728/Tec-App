@@ -46,7 +46,7 @@ const handleIncompletePayment = async (payment: unknown) => {
  * @returns Promise that resolves when SDK is ready
  * @throws Error if SDK fails to load within the timeout period
  */
-const waitForPiSDK = (timeout = 10000): Promise<void> => {
+export const waitForPiSDK = (timeout = 10000): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Check if Pi SDK is already ready (window.Pi exists and __TEC_PI_READY flag is set)
     // Both must be true for safety - the flag indicates successful Pi.init()
