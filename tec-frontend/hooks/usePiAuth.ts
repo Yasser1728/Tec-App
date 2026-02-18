@@ -31,7 +31,10 @@ export const usePiAuth = () => {
     const piDetected = isPiBrowser();
     
     // Check if Pi SDK is already ready (event may have fired before component mounted)
-    const piAlreadyReady = typeof window !== 'undefined' && (window as any).__TEC_PI_READY;
+    // Both window.Pi and __TEC_PI_READY flag must be present for safety
+    const piAlreadyReady = typeof window !== 'undefined' && 
+                          typeof window.Pi !== 'undefined' && 
+                          (window as any).__TEC_PI_READY;
     
     setState(prev => ({
       ...prev,

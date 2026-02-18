@@ -48,8 +48,11 @@ const handleIncompletePayment = async (payment: unknown) => {
  */
 const waitForPiSDK = (timeout = 10000): Promise<void> => {
   return new Promise((resolve, reject) => {
-    // Check if Pi SDK is already ready (window.Pi exists or __TEC_PI_READY flag is set)
-    if (typeof window !== 'undefined' && (typeof window.Pi !== 'undefined' || (window as any).__TEC_PI_READY)) {
+    // Check if Pi SDK is already ready (window.Pi exists and __TEC_PI_READY flag is set)
+    // Both must be true for safety - the flag indicates successful Pi.init()
+    if (typeof window !== 'undefined' && 
+        typeof window.Pi !== 'undefined' && 
+        (window as any).__TEC_PI_READY) {
       resolve();
       return;
     }
