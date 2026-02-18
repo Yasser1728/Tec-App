@@ -213,7 +213,7 @@ export default function PiIntegration() {
           <button 
             className={`${styles.btn} ${styles.btnConnect}`} 
             onClick={handleConnect}
-            disabled={isLoading || !isPiBrowserEnv}
+            disabled={isLoading}
           >
             {isLoading ? '⏳ جاري التحميل... / Loading...' : t.dashboard.piIntegration.connectBtn}
           </button>
