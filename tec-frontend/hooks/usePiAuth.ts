@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { loginWithPi, getStoredUser, logout as piLogout, isPiBrowser } from '@/lib/pi/pi-auth';
+import { loginWithPi, getStoredUser, logout as piLogout } from '@/lib/pi/pi-auth';
 import { TecUser } from '@/types/pi.types';
 
 interface AuthState {
@@ -11,104 +11,27 @@ interface AuthState {
   isNewUser: boolean;
   error: string | null;
   errorType: 'not_pi_browser' | 'auth_failed' | 'timeout' | 'storage' | null;
-  isPiBrowserEnv: boolean;
 }
 
 export const usePiAuth = () => {
   const [state, setState] = useState<AuthState>({
     user: null,
-    isLoading: true,
+    isLoading: false,
     isAuthenticated: false,
     isNewUser: false,
     error: null,
     errorType: null,
-    isPiBrowserEnv: false,
   });
 
   useEffect(() => {
-    // Load stored user immediately
+    // Simply load stored user on mount
     const stored = getStoredUser();
-    const piDetected = isPiBrowser();
-    
-    // Check if Pi SDK is already ready (event may have fired before component mounted)
-    // Both window.Pi and __TEC_PI_READY flag must be present for safety
-    const piAlreadyReady = typeof window !== 'undefined' && 
-                          typeof window.Pi !== 'undefined' && 
-                          (window as any).__TEC_PI_READY;
-    
     setState(prev => ({
       ...prev,
       user: stored,
       isAuthenticated: !!stored,
-      isLoading: !piDetected && !stored && !piAlreadyReady, // Keep loading if Pi not detected yet and no stored user
-      isPiBrowserEnv: piDetected || piAlreadyReady,
+      isLoading: false,
     }));
-
-    // If Pi SDK not detected yet and no stored user, listen for events and poll as fallback
-    // Skip if user is already authenticated - they don't need Pi SDK for initial load
-    if (!piDetected && !stored && !piAlreadyReady) {
-      let eventHandled = false;
-      
-      // Event-based approach (preferred)
-      const handlePiSdkReady = () => {
-        console.log('[TEC usePiAuth] Pi SDK ready event received');
-        eventHandled = true;
-        setState(prev => ({
-          ...prev,
-          isPiBrowserEnv: true,
-          isLoading: false,
-        }));
-      };
-      
-      const handlePiSdkError = () => {
-        console.error('[TEC usePiAuth] Pi SDK error event received');
-        eventHandled = true;
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          isPiBrowserEnv: false,
-        }));
-      };
-      
-      window.addEventListener('tec-pi-ready', handlePiSdkReady);
-      window.addEventListener('tec-pi-error', handlePiSdkError);
-      
-      // Polling as fallback (in case events are missed)
-      let attempts = 0;
-      const maxAttempts = 25; // 25 * 200ms = 5 seconds max
-      
-      const interval = setInterval(() => {
-        if (eventHandled) {
-          clearInterval(interval);
-          return;
-        }
-        
-        attempts++;
-        if (isPiBrowser()) {
-          console.log('[TEC usePiAuth] Pi SDK detected via polling');
-          clearInterval(interval);
-          setState(prev => ({
-            ...prev,
-            isPiBrowserEnv: true,
-            isLoading: false,
-          }));
-        } else if (attempts >= maxAttempts) {
-          console.log('[TEC usePiAuth] Max polling attempts reached');
-          clearInterval(interval);
-          setState(prev => ({
-            ...prev,
-            isLoading: false,
-            // isPiBrowserEnv stays false — user is genuinely not in Pi Browser
-          }));
-        }
-      }, 200);
-
-      return () => {
-        clearInterval(interval);
-        window.removeEventListener('tec-pi-ready', handlePiSdkReady);
-        window.removeEventListener('tec-pi-error', handlePiSdkError);
-      };
-    }
   }, []);
 
   const login = useCallback(async () => {

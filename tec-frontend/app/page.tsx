@@ -8,7 +8,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import styles from './page.module.css';
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading, error, login, isPiBrowserEnv } = usePiAuth();
+  const { isAuthenticated, isLoading, error, login } = usePiAuth();
   const { t } = useTranslation();
   const router = useRouter();
 
