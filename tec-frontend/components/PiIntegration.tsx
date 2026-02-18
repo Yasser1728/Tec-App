@@ -9,7 +9,7 @@ import styles from './PiIntegration.module.css';
 type PaymentState = 'idle' | 'processing' | 'approving' | 'completing' | 'success' | 'error' | 'cancelled';
 
 export default function PiIntegration() {
-  const { user, isAuthenticated, isLoading, isPiBrowserEnv, error: authError, errorType: authErrorType, login } = usePiAuth();
+  const { user, isAuthenticated, isLoading, error: authError, errorType: authErrorType, login } = usePiAuth();
   const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, testSDK, payDemoPi } = usePiPayment();
   const { t } = useTranslation();
   const [paymentState, setPaymentState] = useState<PaymentState>('idle');
@@ -174,24 +174,6 @@ export default function PiIntegration() {
         <h3 className={styles.title}>
           🌐 {t.dashboard.piIntegration.title}
         </h3>
-
-        {/* Not in Pi Browser Warning */}
-        {!isLoading && !isPiBrowserEnv && !isAuthenticated && (
-          <div className={styles.warning}>
-            <div style={{ marginBottom: '12px' }}>
-              ⚠️ <strong>غير متصل بمتصفح Pi / Not in Pi Browser</strong>
-            </div>
-            <div style={{ fontSize: '0.9em', lineHeight: '1.6' }}>
-              📱 <strong>تعليمات / Instructions:</strong><br/>
-              1. افتح تطبيق Pi Network على هاتفك<br/>
-              &nbsp;&nbsp;&nbsp;Open Pi Network app on your phone<br/>
-              2. انتقل إلى التطبيقات → TEC App<br/>
-              &nbsp;&nbsp;&nbsp;Go to Apps → TEC App<br/>
-              3. قم بتسجيل الدخول باستخدام حساب Pi الخاص بك<br/>
-              &nbsp;&nbsp;&nbsp;Login with your Pi account
-            </div>
-          </div>
-        )}
 
         {/* Authentication Error */}
         {authError && (
