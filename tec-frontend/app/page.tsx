@@ -97,8 +97,8 @@ export default function HomePage() {
             <>
               <div>❌ {errorMessage}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                📱 يرجى فتح التطبيق داخل متصفح Pi Network<br/>
-                📱 Please open the app inside Pi Browser
+                <div>📱 يرجى فتح التطبيق داخل متصفح Pi Network</div>
+                <div>📱 Please open the app inside Pi Browser</div>
               </div>
             </>
           );
@@ -107,8 +107,8 @@ export default function HomePage() {
             <>
               <div>⏱️ {errorMessage}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى<br/>
-                🔄 Please check your internet connection and try again
+                <div>🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى</div>
+                <div>🔄 Please check your internet connection and try again</div>
               </div>
             </>
           );
@@ -117,8 +117,8 @@ export default function HomePage() {
             <>
               <div>❌ {errorMessage}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                ⚠️ فشلت الموافقة على الدفع من الخادم<br/>
-                ⚠️ Server approval failed - payment may be incomplete
+                <div>⚠️ فشلت الموافقة على الدفع من الخادم</div>
+                <div>⚠️ Server approval failed - payment may be incomplete</div>
               </div>
             </>
           );
