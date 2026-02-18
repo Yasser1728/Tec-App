@@ -4,15 +4,20 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePiAuth } from '@/hooks/usePiAuth';
 import { usePiPayment } from '@/hooks/usePiPayment';
+import { useDiagnostics } from '@/hooks/useDiagnostics';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import PaymentDiagnostics from '@/components/PaymentDiagnostics';
 import styles from './page.module.css';
 
 type PaymentState = 'idle' | 'processing' | 'success' | 'error' | 'cancelled';
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading, error, login } = usePiAuth();
-  const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, testSDK, payDemoPi } = usePiPayment();
+  const { isAuthenticated, isLoading, error, login, user } = usePiAuth();
+  const { events, addEvent } = useDiagnostics();
+  const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, testSDK, payDemoPi } = usePiPayment({
+    onDiagnostic: addEvent,
+  });
   const { t } = useTranslation();
   const router = useRouter();
   const [paymentState, setPaymentState] = useState<PaymentState>('idle');
@@ -22,12 +27,33 @@ export default function HomePage() {
     if (isAuthenticated) router.push('/dashboard');
   }, [isAuthenticated, router]);
 
+  useEffect(() => {
+    // Add SDK initialization event on mount
+    if (typeof window !== 'undefined') {
+      const checkSDK = () => {
+        const ready = !!(window as any).__TEC_PI_READY;
+        if (ready) {
+          addEvent('sdk_init', 'Pi SDK initialized successfully');
+        }
+      };
+      
+      checkSDK();
+      window.addEventListener('tec-pi-ready', () => {
+        addEvent('sdk_init', 'Pi SDK initialized successfully');
+      });
+    }
+  }, [addEvent]);
+
   const handleLogin = async () => {
     try {
+      addEvent('auth', 'Login attempt started');
       await login();
+      addEvent('auth', 'Login successful');
       router.push('/dashboard');
     } catch (err: unknown) {
       // Error is already handled in usePiAuth hook
+      const errorMsg = err instanceof Error ? err.message : 'Login failed';
+      addEvent('error', `Login failed: ${errorMsg}`);
       console.error('Login failed:', err);
     }
   };
@@ -261,6 +287,13 @@ export default function HomePage() {
               <div>{getPaymentStatusMessage()}</div>
             </div>
           )}
+
+          {/* Payment Diagnostics - Only visible in Testnet */}
+          <PaymentDiagnostics 
+            isAuthenticated={isAuthenticated}
+            username={user?.piUsername}
+            events={events}
+          />
         </div>
 
         <div className={`${styles.stats} fade-up-4`}>
