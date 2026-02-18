@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate paymentId format to prevent path traversal
-    const paymentIdRegex = /^[a-zA-Z0-9._-]+$/;
+    const paymentIdRegex = /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$/;
     if (!paymentIdRegex.test(paymentId)) {
       console.error('[Payment Complete] Invalid paymentId format:', paymentId);
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate txid format (accept Pi testnet/mainnet IDs without allowing path separators)
-    const txidRegex = /^[a-zA-Z0-9._-]{8,128}$/;
+    const txidRegex = /^[a-zA-Z0-9_-]{8,128}$/;
     if (!txidRegex.test(txid)) {
       console.error('[Payment Complete] Invalid txid format:', txid);
       return NextResponse.json(

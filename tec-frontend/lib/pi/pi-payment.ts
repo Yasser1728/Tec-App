@@ -118,7 +118,7 @@ export const createU2APayment = async (
           onDiagnostic?.('approval', `Server approval requested for payment: ${paymentId}`, { paymentId });
 
           // Validate paymentId format before sending to server
-          const paymentIdRegex = /^[a-zA-Z0-9._-]+$/;
+          const paymentIdRegex = /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$/;
           if (!paymentIdRegex.test(paymentId)) {
             console.error('[Pi Payment] Invalid paymentId format:', paymentId);
             onDiagnostic?.('error', `Invalid paymentId format: ${paymentId}`, { paymentId });
@@ -167,7 +167,7 @@ export const createU2APayment = async (
           onDiagnostic?.('completion', `Server completion requested for payment: ${paymentId}`, { paymentId, txid });
 
           // Validate paymentId format before sending to server
-          const paymentIdRegex = /^[a-zA-Z0-9._-]+$/;
+          const paymentIdRegex = /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$/;
           if (!paymentIdRegex.test(paymentId)) {
             console.error('[Pi Payment] Invalid paymentId format in completion:', paymentId);
             onDiagnostic?.('error', `Invalid paymentId format in completion: ${paymentId}`, { paymentId });
@@ -179,7 +179,7 @@ export const createU2APayment = async (
           }
 
           // Validate txid format (accept Pi testnet/mainnet IDs without allowing path separators)
-          const txidRegex = /^[a-zA-Z0-9._-]{8,128}$/;
+          const txidRegex = /^[a-zA-Z0-9_-]{8,128}$/;
           if (!txidRegex.test(txid)) {
             console.error('[Pi Payment] Invalid txid format:', txid);
             onDiagnostic?.('error', `Invalid txid format: ${txid}`, { txid });
