@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate paymentId format to prevent path traversal
-    const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
+    const paymentIdRegex = /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$/;
     if (!paymentIdRegex.test(paymentId)) {
       console.error('[Payment Complete] Invalid paymentId format:', paymentId);
       return NextResponse.json(
@@ -33,9 +33,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate txid format (blockchain transaction ID)
-    // Pi Network blockchain uses SHA-256 hashes, which are 64 hexadecimal characters
-    const txidRegex = /^[a-fA-F0-9]{64}$/;
+    // Validate txid format (accept Pi testnet/mainnet IDs without allowing path separators)
+    const txidRegex = /^[a-zA-Z0-9_-]{8,128}$/;
     if (!txidRegex.test(txid)) {
       console.error('[Payment Complete] Invalid txid format:', txid);
       return NextResponse.json(
