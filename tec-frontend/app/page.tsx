@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePiAuth } from '@/hooks/usePiAuth';
 import { usePiPayment } from '@/hooks/usePiPayment';
@@ -15,8 +15,14 @@ type PaymentState = 'idle' | 'processing' | 'success' | 'error' | 'cancelled';
 export default function HomePage() {
   const { isAuthenticated, isLoading, error, login, user } = usePiAuth();
   const { events, addEvent } = useDiagnostics();
+  
+  // Memoize the diagnostic callback to prevent unnecessary re-renders
+  const diagnosticCallback = useCallback((type: string, message: string, data?: unknown) => {
+    addEvent(type as any, message, data);
+  }, [addEvent]);
+  
   const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, testSDK, payDemoPi } = usePiPayment({
-    onDiagnostic: addEvent,
+    onDiagnostic: diagnosticCallback,
   });
   const { t } = useTranslation();
   const router = useRouter();
@@ -37,10 +43,17 @@ export default function HomePage() {
         }
       };
       
-      checkSDK();
-      window.addEventListener('tec-pi-ready', () => {
+      const handlePiReady = () => {
         addEvent('sdk_init', 'Pi SDK initialized successfully');
-      });
+      };
+      
+      checkSDK();
+      window.addEventListener('tec-pi-ready', handlePiReady);
+      
+      // Cleanup event listener
+      return () => {
+        window.removeEventListener('tec-pi-ready', handlePiReady);
+      };
     }
   }, [addEvent]);
 

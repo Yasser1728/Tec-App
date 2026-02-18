@@ -27,7 +27,7 @@ export default function PaymentDiagnostics({
 
   useEffect(() => {
     // Check if we're in testnet mode
-    const testnetMode = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false';
+    const testnetMode = process.env.NEXT_PUBLIC_PI_SANDBOX === 'true';
     setIsTestnet(testnetMode);
 
     // Check SDK readiness

@@ -24,7 +24,11 @@ export const useDiagnostics = () => {
       data,
     };
 
-    setEvents(prev => [...prev, event]);
+    // Keep only last 100 events to prevent memory issues
+    setEvents(prev => {
+      const updated = [...prev, event];
+      return updated.length > 100 ? updated.slice(-100) : updated;
+    });
     
     // Also log to console for debugging
     const icon = type === 'error' ? '❌' : type === 'approval' ? '✅' : type === 'completion' ? '✨' : '📋';
