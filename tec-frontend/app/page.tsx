@@ -70,24 +70,19 @@ export default function HomePage() {
             <button className={`btn-gold ${styles.loginBtn}`} disabled>
               <span className={styles.spinner} />{t.common.loading}
             </button>
-          ) : !isPiBrowserEnv ? (
-            <div className={styles.warningBox}>
-              <span>⚠️</span>
-              <div>
-                <p className={styles.warningTitle}>{t.home.warningTitle}</p>
-                <p className={styles.warningText}>{t.home.warningText}</p>
-              </div>
-            </div>
           ) : (
-            <button className={`btn-gold ${styles.loginBtn}`} onClick={handleLogin} disabled={isLoading}>
-              {isLoading ? (
-                <><span className={styles.spinner} />{t.common.loading}</>
-              ) : (
-                <>π {t.common.login}</>
+            <>
+              <button 
+                className={`btn-gold ${styles.loginBtn}`} 
+                onClick={handleLogin}
+              >
+                π {t.common.login}
+              </button>
+              {error && (
+                <p className={styles.error}>{error}</p>
               )}
-            </button>
+            </>
           )}
-          {error && <p className={styles.error}>{error}</p>}
         </div>
 
         <div className={`${styles.stats} fade-up-4`}>

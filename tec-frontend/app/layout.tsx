@@ -12,7 +12,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" dir="ltr">
       <head>
-        <script src="https://sdk.minepi.com/pi-sdk.js" defer></script>
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="https://sdk.minepi.com/pi-sdk.js"></script>
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             var MAX_WAIT = 15000;
