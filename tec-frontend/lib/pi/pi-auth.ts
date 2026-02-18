@@ -38,7 +38,14 @@ const handleIncompletePayment = async (payment: unknown) => {
   }
 };
 
-// Wait for Pi SDK to be ready
+/**
+ * Waits for the Pi SDK to be ready before attempting authentication.
+ * Resolves immediately if Pi SDK is already loaded, otherwise waits for 'tec-pi-ready' event.
+ * 
+ * @param timeout - Maximum time to wait for SDK in milliseconds (default: 10000ms)
+ * @returns Promise that resolves when SDK is ready
+ * @throws Error if SDK fails to load within the timeout period
+ */
 const waitForPiSDK = (timeout = 10000): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (typeof window !== 'undefined' && typeof window.Pi !== 'undefined') {
