@@ -1,16 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePiAuth } from '@/hooks/usePiAuth';
+import { usePiPayment } from '@/hooks/usePiPayment';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import styles from './page.module.css';
 
+type PaymentState = 'idle' | 'processing' | 'success' | 'error' | 'cancelled';
+
 export default function HomePage() {
   const { isAuthenticated, isLoading, error, login } = usePiAuth();
+  const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, testSDK, payDemoPi } = usePiPayment();
   const { t } = useTranslation();
   const router = useRouter();
+  const [paymentState, setPaymentState] = useState<PaymentState>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
     if (isAuthenticated) router.push('/dashboard');
@@ -24,6 +30,104 @@ export default function HomePage() {
       // Error is already handled in usePiAuth hook
       console.error('Login failed:', err);
     }
+  };
+
+  const handleTestSdk = () => {
+    const available = testSDK();
+    if (available) {
+      console.log('✅ Pi SDK Test: PASSED');
+      console.log('🌐 Testnet Mode: Demo payments enabled');
+    } else {
+      console.log('❌ Pi SDK Test: FAILED - SDK not available');
+    }
+  };
+
+  const handlePayDemo = async () => {
+    try {
+      setPaymentState('processing');
+      setErrorMessage('');
+      
+      console.log('[HomePage] Starting demo payment...');
+      const result = await payDemoPi();
+      
+      console.log('[HomePage] Payment result:', result);
+      
+      if (result.success && result.status === 'completed') {
+        setPaymentState('success');
+      } else if (result.status === 'cancelled') {
+        setPaymentState('cancelled');
+      } else {
+        setPaymentState('error');
+        setErrorMessage(result.message || 'فشلت الدفعة / Payment failed');
+      }
+    } catch (err) {
+      console.error('[HomePage] Payment error:', err);
+      setPaymentState('error');
+      
+      const message = paymentError || (err instanceof Error ? err.message : 'حدث خطأ غير متوقع / Unexpected error occurred');
+      setErrorMessage(message);
+    }
+  };
+
+  const handleRetry = () => {
+    setPaymentState('idle');
+    setErrorMessage('');
+  };
+
+  const getPaymentStatusMessage = () => {
+    switch (paymentState) {
+      case 'processing':
+        return 'جاري معالجة الدفعة... / Processing payment...';
+      case 'success':
+        return lastPayment?.message || 'تمت الدفعة بنجاح! 🎉 / Payment successful! 🎉';
+      case 'cancelled':
+        return 'ألغيت الدفعة / Payment cancelled';
+      case 'error':
+        return errorMessage;
+      default:
+        return '';
+    }
+  };
+
+  const getErrorMessageWithInstructions = () => {
+    if (paymentState === 'error' && paymentErrorType) {
+      switch (paymentErrorType) {
+        case 'not_pi_browser':
+          return (
+            <>
+              <div>❌ {errorMessage}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                <div>📱 يرجى فتح التطبيق داخل متصفح Pi Network</div>
+                <div>📱 Please open the app inside Pi Browser</div>
+              </div>
+            </>
+          );
+        case 'timeout':
+          return (
+            <>
+              <div>⏱️ {errorMessage}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                <div>🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى</div>
+                <div>🔄 Please check your internet connection and try again</div>
+              </div>
+            </>
+          );
+        case 'approval_failed':
+          return (
+            <>
+              <div>❌ {errorMessage}</div>
+              <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                <div>⚠️ فشلت الموافقة على الدفع من الخادم</div>
+                <div>⚠️ Server approval failed - payment may be incomplete</div>
+              </div>
+            </>
+          );
+        default:
+          return <div>❌ {errorMessage}</div>;
+      }
+    }
+    
+    return <div>❌ {errorMessage}</div>;
   };
 
   const apps = [
@@ -82,6 +186,80 @@ export default function HomePage() {
                 <p className={styles.error}>{error}</p>
               )}
             </>
+          )}
+
+          {/* Pi Payment Buttons */}
+          <div className={styles.piButtonGroup}>
+            <button 
+              className={styles.btnTest} 
+              onClick={handleTestSdk}
+            >
+              🖊️ Test Pi SDK (Check Console)
+            </button>
+
+            <button 
+              className={styles.btnPay} 
+              onClick={handlePayDemo}
+              disabled={!isAuthenticated || isProcessing || paymentState === 'processing'}
+            >
+              {!isAuthenticated ? (
+                <span>🔒 Login first</span>
+              ) : isProcessing || paymentState === 'processing' ? (
+                <span>⏳ Processing...</span>
+              ) : (
+                <span>💎 Pay 1 Pi - Demo Payment</span>
+              )}
+            </button>
+          </div>
+
+          {/* Payment Status Messages */}
+          {paymentState === 'success' && lastPayment && (
+            <div className={styles.paymentSuccess}>
+              <div className={styles.successMessage}>
+                ✅ {getPaymentStatusMessage()}
+              </div>
+              {lastPayment.txid && (
+                <div className={styles.txidInfo}>
+                  <small>
+                    txid: <code>{lastPayment.txid}</code>
+                  </small>
+                </div>
+              )}
+              {lastPayment.paymentId && (
+                <div className={styles.paymentIdInfo}>
+                  <small>
+                    Payment ID: <code>{lastPayment.paymentId}</code>
+                  </small>
+                </div>
+              )}
+            </div>
+          )}
+
+          {paymentState === 'cancelled' && (
+            <div className={styles.paymentWarning}>
+              ⚠️ {getPaymentStatusMessage()}
+            </div>
+          )}
+
+          {paymentState === 'error' && (
+            <div className={styles.paymentError}>
+              <div className={styles.errorMessage}>
+                {getErrorMessageWithInstructions()}
+              </div>
+              <button 
+                className={styles.btnRetry} 
+                onClick={handleRetry}
+              >
+                🔄 Retry
+              </button>
+            </div>
+          )}
+
+          {paymentState === 'processing' && (
+            <div className={styles.paymentProcessing}>
+              <div className={styles.spinner}></div>
+              <div>{getPaymentStatusMessage()}</div>
+            </div>
           )}
         </div>
 
