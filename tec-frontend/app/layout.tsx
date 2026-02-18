@@ -11,6 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" dir="ltr">
       <head>
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="https://sdk.minepi.com/pi-sdk.js"></script>
         <script dangerouslySetInnerHTML={{ __html: `
           try {
