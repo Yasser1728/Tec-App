@@ -15,6 +15,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate recipientUid format
+    const uidRegex = /^[a-zA-Z0-9_-]+$/;
+    if (typeof recipientUid !== 'string' || !uidRegex.test(recipientUid)) {
+      console.error('[Payment A2U] Invalid recipientUid format:', recipientUid);
+      return NextResponse.json(
+        { success: false, message: 'Invalid recipientUid format' },
+        { status: 400 }
+      );
+    }
+
+    // Validate amount is a positive number
+    if (typeof amount !== 'number' || amount <= 0 || !isFinite(amount)) {
+      console.error('[Payment A2U] Invalid amount:', amount);
+      return NextResponse.json(
+        { success: false, message: 'Amount must be a positive number' },
+        { status: 400 }
+      );
+    }
+
+    // Validate memo length
+    if (typeof memo !== 'string' || memo.length === 0 || memo.length > 500) {
+      console.error('[Payment A2U] Invalid memo:', memo);
+      return NextResponse.json(
+        { success: false, message: 'Memo must be between 1 and 500 characters' },
+        { status: 400 }
+      );
+    }
+
     // Sandbox mode fallback
     if (!PI_API_KEY && PI_SANDBOX) {
       console.log('[Sandbox] Simulating A2U payment creation for:', recipientUid, amount, memo);

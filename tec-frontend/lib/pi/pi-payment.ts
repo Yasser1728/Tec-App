@@ -1,4 +1,4 @@
-import { getAccessToken } from './pi-auth';
+import { getAccessToken, waitForPiSDK } from './pi-auth';
 
 export interface A2UPaymentRequest {
   recipientUid: string;
@@ -69,13 +69,20 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
 };
 
 // User-to-App payment using Pi SDK (client-side)
-export const createU2APayment = (
+export const createU2APayment = async (
   amount: number,
   memo: string,
   metadata: Record<string, unknown> = {}
 ): Promise<PaymentResult> => {
+  if (typeof window === 'undefined') {
+    throw new Error('Pi SDK غير متاح — افتح التطبيق في Pi Browser / Pi SDK not available - Open in Pi Browser');
+  }
+
+  // Wait for Pi SDK to be ready before attempting payment
+  await waitForPiSDK();
+
   return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !window.Pi) {
+    if (!window.Pi) {
       reject(new Error('Pi SDK غير متاح — افتح التطبيق في Pi Browser / Pi SDK not available - Open in Pi Browser'));
       return;
     }
@@ -144,6 +151,28 @@ export const createU2APayment = (
         },
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
           if (paymentTimedOut) return;
+
+          // Validate paymentId format before sending to server
+          const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
+          if (!paymentIdRegex.test(paymentId)) {
+            console.error('[Pi Payment] Invalid paymentId format in completion:', paymentId);
+            clearPaymentTimer();
+            reject(new Error(
+              'معرف الدفع غير صالح / Invalid payment ID format'
+            ));
+            return;
+          }
+
+          // Validate txid format (SHA-256 hex hash)
+          const txidRegex = /^[a-fA-F0-9]{64}$/;
+          if (!txidRegex.test(txid)) {
+            console.error('[Pi Payment] Invalid txid format:', txid);
+            clearPaymentTimer();
+            reject(new Error(
+              'معرف المعاملة غير صالح / Invalid transaction ID format'
+            ));
+            return;
+          }
 
           try {
             console.log('[Pi Payment] Server completion requested for:', paymentId, txid);
