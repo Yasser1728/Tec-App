@@ -1,0 +1,144 @@
+.diagnostics {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 24px;
+  max-width: 600px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.header {
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.statusGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.statusLabel {
+  color: #888;
+  min-width: 100px;
+}
+
+.statusValue {
+  font-weight: 600;
+  flex: 1;
+}
+
+.statusValue.success {
+  color: #4ade80;
+}
+
+.statusValue.pending {
+  color: #fbbf24;
+}
+
+.statusValue.info {
+  color: #60a5fa;
+}
+
+.statusTime {
+  color: #666;
+  font-size: 11px;
+}
+
+.eventsSection {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.eventsTitle {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.eventsList {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  border-left: 3px solid rgba(212, 175, 55, 0.5);
+}
+
+.eventIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.eventContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.eventMessage {
+  color: #fff;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.eventTime {
+  color: #666;
+  font-size: 11px;
+}
+
+.eventData {
+  margin: 8px 0 0 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  color: #60a5fa;
+  font-size: 11px;
+  overflow-x: auto;
+}
+
+/* Scrollbar styling */
+.eventsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.eventsList::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.eventsList::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 3px;
+}
+
+.eventsList::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.5);
+}

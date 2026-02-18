@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { createU2APayment, testPiSDK, PaymentResult } from '@/lib/pi/pi-payment';
+import { createU2APayment, testPiSDK, PaymentResult, DiagnosticCallback } from '@/lib/pi/pi-payment';
 import { isPiBrowser } from '@/lib/pi/pi-auth';
 
 interface PaymentState {
@@ -12,7 +12,11 @@ interface PaymentState {
   sdkAvailable: boolean;
 }
 
-export const usePiPayment = () => {
+interface UsePiPaymentOptions {
+  onDiagnostic?: DiagnosticCallback;
+}
+
+export const usePiPayment = (options?: UsePiPaymentOptions) => {
   const [state, setState] = useState<PaymentState>({
     isProcessing: false,
     lastPayment: null,
@@ -36,7 +40,12 @@ export const usePiPayment = () => {
     
     setState(prev => ({ ...prev, isProcessing: true, error: null, errorType: null }));
     try {
-      const result = await createU2APayment(amount, `TEC Demo Payment - ${amount} Pi`, { type: 'demo' });
+      const result = await createU2APayment(
+        amount, 
+        `TEC Demo Payment - ${amount} Pi`, 
+        { type: 'demo' },
+        options?.onDiagnostic
+      );
       
       // Only update state if component is still mounted
       if (isMountedRef.current) {
@@ -64,6 +73,9 @@ export const usePiPayment = () => {
         errorType = 'completion_failed';
       }
       
+      // Log error to diagnostics
+      options?.onDiagnostic?.('error', message, { errorType });
+      
       // Only update state if component is still mounted
       if (isMountedRef.current) {
         setState(prev => ({
@@ -75,7 +87,7 @@ export const usePiPayment = () => {
       }
       throw err;
     }
-  }, []);
+  }, [options?.onDiagnostic]);
 
   const testSDK = useCallback(() => {
     const available = testPiSDK();

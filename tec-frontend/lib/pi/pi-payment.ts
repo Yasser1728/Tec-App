@@ -68,11 +68,15 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
   }
 };
 
+// Diagnostic callback type
+export type DiagnosticCallback = (type: string, message: string, data?: unknown) => void;
+
 // User-to-App payment using Pi SDK (client-side)
 export const createU2APayment = async (
   amount: number,
   memo: string,
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
+  onDiagnostic?: DiagnosticCallback
 ): Promise<PaymentResult> => {
   if (typeof window === 'undefined') {
     throw new Error('Pi SDK غير متاح — افتح التطبيق في Pi Browser / Pi SDK not available - Open in Pi Browser');
@@ -110,10 +114,14 @@ export const createU2APayment = async (
         onReadyForServerApproval: async (paymentId: string) => {
           if (paymentTimedOut) return;
 
+          // Log diagnostic event
+          onDiagnostic?.('approval', `Server approval requested for payment: ${paymentId}`, { paymentId });
+
           // Validate paymentId format before sending to server
           const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
           if (!paymentIdRegex.test(paymentId)) {
             console.error('[Pi Payment] Invalid paymentId format:', paymentId);
+            onDiagnostic?.('error', `Invalid paymentId format: ${paymentId}`, { paymentId });
             clearPaymentTimer();
             reject(new Error(
               'معرف الدفع غير صالح / Invalid payment ID format'
@@ -134,6 +142,7 @@ export const createU2APayment = async (
               const errorMsg = errorData.message || 'فشلت الموافقة / Approval failed';
               console.error('[Pi Payment] Server approval failed:', errorMsg);
               console.warn('[Pi Payment] Incomplete payment may remain:', paymentId);
+              onDiagnostic?.('error', `Server approval failed: ${errorMsg}`, { paymentId, error: errorMsg });
               clearPaymentTimer();
               reject(new Error(errorMsg));
               return;
@@ -141,10 +150,12 @@ export const createU2APayment = async (
             
             const result = await res.json();
             console.log('[Pi Payment] Server approval successful:', result);
+            onDiagnostic?.('approval', `Server approval successful for payment: ${paymentId}`, { paymentId, result });
           } catch (err) {
             console.error('[Pi Payment] Server approval error:', err);
             console.warn('[Pi Payment] Incomplete payment may remain:', paymentId);
             const errorMessage = err instanceof Error ? err.message : 'فشلت الموافقة / Approval failed';
+            onDiagnostic?.('error', `Server approval error: ${errorMessage}`, { paymentId, error: errorMessage });
             clearPaymentTimer();
             reject(new Error(errorMessage));
           }
@@ -152,10 +163,14 @@ export const createU2APayment = async (
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
           if (paymentTimedOut) return;
 
+          // Log diagnostic event
+          onDiagnostic?.('completion', `Server completion requested for payment: ${paymentId}`, { paymentId, txid });
+
           // Validate paymentId format before sending to server
           const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
           if (!paymentIdRegex.test(paymentId)) {
             console.error('[Pi Payment] Invalid paymentId format in completion:', paymentId);
+            onDiagnostic?.('error', `Invalid paymentId format in completion: ${paymentId}`, { paymentId });
             clearPaymentTimer();
             reject(new Error(
               'معرف الدفع غير صالح / Invalid payment ID format'
@@ -167,6 +182,7 @@ export const createU2APayment = async (
           const txidRegex = /^[a-fA-F0-9]{64}$/;
           if (!txidRegex.test(txid)) {
             console.error('[Pi Payment] Invalid txid format:', txid);
+            onDiagnostic?.('error', `Invalid txid format: ${txid}`, { txid });
             clearPaymentTimer();
             reject(new Error(
               'معرف المعاملة غير صالح / Invalid transaction ID format'
@@ -186,6 +202,7 @@ export const createU2APayment = async (
               const errorData = await res.json().catch(() => ({ message: 'Completion failed' }));
               const errorMsg = errorData.message || 'فشل الإكمال / Completion failed';
               console.error('[Pi Payment] Server completion failed:', errorMsg);
+              onDiagnostic?.('error', `Server completion failed: ${errorMsg}`, { paymentId, txid, error: errorMsg });
               clearPaymentTimer();
               reject(new Error(errorMsg));
               return;
@@ -193,6 +210,7 @@ export const createU2APayment = async (
             
             const result = await res.json();
             console.log('[Pi Payment] Server completion successful:', result);
+            onDiagnostic?.('completion', `Server completion successful for payment: ${paymentId}`, { paymentId, txid, result });
             
             clearPaymentTimer();
             resolve({
@@ -207,12 +225,14 @@ export const createU2APayment = async (
             });
           } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'فشلت الدفعة / Payment failed';
+            onDiagnostic?.('error', `Server completion error: ${errorMessage}`, { paymentId, txid, error: errorMessage });
             clearPaymentTimer();
             reject(new Error(errorMessage));
           }
         },
         onCancel: () => {
           console.log('[Pi Payment] Payment cancelled by user');
+          onDiagnostic?.('cancel', 'Payment cancelled by user');
           clearPaymentTimer();
           resolve({
             success: false,
@@ -224,6 +244,7 @@ export const createU2APayment = async (
         },
         onError: (error: Error) => {
           console.error('[Pi Payment] SDK error:', error);
+          onDiagnostic?.('error', `Pi SDK error: ${error.message}`, { error: error.message });
           clearPaymentTimer();
           reject(new Error(`خطأ Pi SDK / Pi SDK error: ${error.message}`));
         },
