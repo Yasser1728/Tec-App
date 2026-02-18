@@ -120,6 +120,18 @@ export default function DiagnosticsPanel() {
     };
   }, []);
 
+  const handleReset = () => {
+    setDiagnostics(prev => ({
+      ...prev,
+      approvalCallbackFired: false,
+      completionCallbackFired: false,
+      lastApprovalPaymentId: null,
+      lastCompletionPaymentId: null,
+      lastCompletionTxid: null,
+      errors: [],
+    }));
+  };
+
   // Only show diagnostics in sandbox mode
   if (!diagnostics.isSandbox) {
     return null;
@@ -129,6 +141,9 @@ export default function DiagnosticsPanel() {
     <div className={styles.panel}>
       <div className={styles.header}>
         <span className={styles.title}>🔍 Payment Diagnostics (Testnet)</span>
+        <button className={styles.resetBtn} onClick={handleReset} title="Reset diagnostics">
+          🔄
+        </button>
       </div>
       
       <div className={styles.content}>

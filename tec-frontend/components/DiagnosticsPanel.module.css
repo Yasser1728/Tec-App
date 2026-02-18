@@ -26,6 +26,22 @@
   letter-spacing: 0.5px;
 }
 
+.resetBtn {
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #d4af37;
+  transition: all 0.2s ease;
+}
+
+.resetBtn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
 .content {
   display: flex;
   flex-direction: column;
