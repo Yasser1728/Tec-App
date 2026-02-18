@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate paymentId format to prevent path traversal
-    const paymentIdRegex = /^[a-zA-Z0-9_-]+$/;
+    const paymentIdRegex = /^[a-zA-Z0-9._-]+$/;
     if (!paymentIdRegex.test(paymentId)) {
       console.error('[Payment Approve] Invalid paymentId format:', paymentId);
       return NextResponse.json(
