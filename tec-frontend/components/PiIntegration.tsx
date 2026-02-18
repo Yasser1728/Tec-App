@@ -225,7 +225,7 @@ export default function PiIntegration() {
             </div>
 
             <div className={styles.mainnetIndicator}>
-              🌐 Testnet Mode: Demo payments
+              🌐 {process.env.NEXT_PUBLIC_PI_SANDBOX === 'true' ? 'Testnet Mode: Demo payments' : 'Mainnet Mode: Real Pi payments'}
             </div>
 
             <div className={styles.buttonGroup}>

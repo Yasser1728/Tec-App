@@ -54,24 +54,27 @@
 }
 
 .btnTest {
-  background: rgba(100, 100, 100, 0.3);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #00d4aa, #00ffcc);
+  color: #000;
+  font-weight: 700;
 }
 
 .btnTest:hover:not(:disabled) {
-  background: rgba(120, 120, 120, 0.4);
+  background: linear-gradient(135deg, #00e6b8, #00ffdd);
   transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
 }
 
 .btnPay {
-  background: linear-gradient(135deg, #ff00ff, #ff0080);
+  background: linear-gradient(135deg, #ff1493, #ff69b4);
   color: #fff;
+  font-weight: 700;
 }
 
 .btnPay:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff3da8, #ff7fc4);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(255, 0, 255, 0.3);
+  box-shadow: 0 8px 24px rgba(255, 20, 147, 0.5);
 }
 
 .authenticated {
