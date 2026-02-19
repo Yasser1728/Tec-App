@@ -58,12 +58,17 @@ app.get('/health', (_req, res) => {
   res.json(response);
 });
 
-// Routes
+// Routes — mounted at both paths for local dev and Vercel serverless compatibility
 app.use('/auth', authRoutes);
 app.use('/subscriptions', subscriptionRoutes);
 app.use('/kyc', kycRoutes);
 app.use('/security', securityRoutes);
 app.use('/profile', profileRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/kyc', kycRoutes);
+app.use('/api/security', securityRoutes);
+app.use('/api/profile', profileRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

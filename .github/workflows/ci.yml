@@ -167,7 +167,7 @@ jobs:
           push: false
           tags: tec-api-gateway:test
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       - name: Build Auth Service Docker image
         uses: docker/build-push-action@v5
@@ -177,7 +177,7 @@ jobs:
           push: false
           tags: tec-auth-service:test
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       - name: Build Wallet Service Docker image
         uses: docker/build-push-action@v5
@@ -187,7 +187,7 @@ jobs:
           push: false
           tags: tec-wallet-service:test
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       - name: Build Payment Service Docker image
         uses: docker/build-push-action@v5
@@ -197,4 +197,4 @@ jobs:
           push: false
           tags: tec-payment-service:test
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true

@@ -2,62 +2,51 @@
   "version": 2,
   "builds": [
     {
-      "src": "tec-api-gateway/**/*.ts",
+      "src": "tec-api-gateway/src/index.ts",
       "use": "@vercel/node",
       "config": { "maxLambdaSize": "50mb" }
     },
     {
-      "src": "tec-payment-service/**/*.ts",
+      "src": "tec-payment-service/src/index.ts",
       "use": "@vercel/node",
       "config": { "maxLambdaSize": "50mb" }
     },
     {
-      "src": "tec-wallet-service/**/*.ts",
+      "src": "tec-wallet-service/src/index.ts",
       "use": "@vercel/node",
       "config": { "maxLambdaSize": "50mb" }
     },
     {
-      "src": "tec-auth-service/**/*.ts",
+      "src": "tec-auth-service/src/index.ts",
       "use": "@vercel/node",
       "config": { "maxLambdaSize": "50mb" }
     }
   ],
   "routes": [
     {
-      "src": "/api/payments/(.*)",
-      "dest": "tec-payment-service/$1.ts"
-    },
-    {
-      "src": "/api/wallet/(.*)",
-      "dest": "tec-wallet-service/$1.ts"
-    },
-    {
-      "src": "/api/auth/(.*)",
-      "dest": "tec-auth-service/$1.ts"
-    },
-    {
       "src": "/(.*)",
-      "dest": "tec-api-gateway/$1.ts"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.minepi.com; connect-src 'self' https://api.minepi.com https://sdk.minepi.com https://*.minepi.com; frame-ancestors 'self' https://*.minepi.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:;"
-        },
-        { "key": "Cross-Origin-Opener-Policy", "value": "unsafe-none" },
-        { "key": "Cross-Origin-Embedder-Policy", "value": "unsafe-none" },
-        { "key": "Cross-Origin-Resource-Policy", "value": "cross-origin" }
-      ]
-    }
-  ],
-  "functions": {
-    "tec-api-gateway/**/*.ts": { "memory": 1024, "maxDuration": 10 },
-    "tec-payment-service/**/*.ts": { "memory": 1024, "maxDuration": 10 },
-    "tec-wallet-service/**/*.ts": { "memory": 1024, "maxDuration": 10 },
-    "tec-auth-service/**/*.ts": { "memory": 1024, "maxDuration": 10 }
-  }
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.minepi.com; connect-src 'self' https://api.minepi.com https://sdk.minepi.com https://*.minepi.com; frame-ancestors 'self' https://*.minepi.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:;",
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+        "Cross-Origin-Opener-Policy": "unsafe-none",
+        "Cross-Origin-Embedder-Policy": "unsafe-none",
+        "Cross-Origin-Resource-Policy": "cross-origin"
+      },
+      "continue": true
+    },
+    { "src": "/api/payments(.*)", "dest": "tec-payment-service/src/index.ts" },
+    { "src": "/api/wallets(.*)", "dest": "tec-wallet-service/src/index.ts" },
+    { "src": "/api/auth(.*)", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/subscriptions(.*)", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/kyc(.*)", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/security(.*)", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/profile(.*)", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/health", "dest": "tec-api-gateway/src/index.ts" },
+    { "src": "/(.*)", "dest": "tec-api-gateway/src/index.ts" }
+  ]
 }
