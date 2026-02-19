@@ -11,6 +11,11 @@ console.log('[Payment Incomplete] Configuration:', {
   PI_API_URL,
 });
 
+// Warn if PI_API_KEY is missing in production
+if (!PI_API_KEY && !PI_SANDBOX) {
+  console.warn('[Payment Incomplete] WARNING: PI_API_KEY is not set in production mode! Incomplete payment recovery will fail.');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { paymentId } = await request.json();
