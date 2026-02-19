@@ -94,6 +94,8 @@ export const createU2APayment = async (
     // Payment timeout: Separate timeouts for approval and completion stages
     // Approval: 3 minutes (user needs time to review and approve)
     // Completion: 3 minutes (backend processing and blockchain confirmation)
+    // Total: 6 minutes (increased from previous 5 minutes single timeout)
+    // This ensures each stage has dedicated time, preventing approval delays from affecting completion
     const APPROVAL_TIMEOUT_MS = 3 * 60 * 1000;
     const COMPLETION_TIMEOUT_MS = 3 * 60 * 1000;
     

@@ -45,7 +45,9 @@ const handleIncompletePayment = async (payment: unknown) => {
  * Waits for the Pi SDK to be ready before attempting authentication.
  * Resolves immediately if Pi SDK is already loaded, otherwise waits for 'tec-pi-ready' event.
  * 
- * @param timeout - Maximum time to wait for SDK in milliseconds (default: 15000ms, increased from 10s)
+ * @param timeout - Maximum time to wait for SDK in milliseconds (default: 15000ms)
+ *                  Note: This is separate from SDK initialization timeout (25s in layout.tsx)
+ *                  This timeout is for waiting after page load, while SDK timeout is for initial load
  * @returns Promise that resolves when SDK is ready
  * @throws Error if SDK fails to load within the timeout period
  */
@@ -111,7 +113,20 @@ export const waitForPiSDK = (timeout = 15000): Promise<void> => {
 
 // Wrap authenticate with timeout
 // Default timeout increased from 30s to 45s to account for SDK wait time + network latency
-const authenticateWithTimeout = async (timeout = 45000): Promise<PiAuthResult> => {
+// Can be overridden via NEXT_PUBLIC_PI_AUTH_TIMEOUT environment variable
+const getAuthTimeout = (): number => {
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_PI_AUTH_TIMEOUT) {
+    const envTimeout = parseInt(process.env.NEXT_PUBLIC_PI_AUTH_TIMEOUT, 10);
+    if (!isNaN(envTimeout) && envTimeout > 0) {
+      return envTimeout;
+    }
+  }
+  return 45000; // Default 45 seconds
+};
+
+const authenticateWithTimeout = async (timeout?: number): Promise<PiAuthResult> => {
+  const effectiveTimeout = timeout ?? getAuthTimeout();
+  
   // First wait for Pi SDK to be ready
   await waitForPiSDK();
   
@@ -122,16 +137,16 @@ const authenticateWithTimeout = async (timeout = 45000): Promise<PiAuthResult> =
     console.log('[TEC Pi Auth] Starting authentication...');
     console.log('[TEC Pi Auth] window.Pi exists:', typeof window.Pi !== 'undefined');
     console.log('[TEC Pi Auth] Requested scopes:', ['username', 'payments', 'wallet_address']);
-    console.log('[TEC Pi Auth] Timeout value:', timeout, 'ms');
+    console.log('[TEC Pi Auth] Timeout value:', effectiveTimeout, 'ms');
     
     const timer = setTimeout(() => {
       const elapsed = Date.now() - startTime;
-      console.error('[TEC Pi Auth] Authentication timed out after', elapsed, 'ms (timeout:', timeout, 'ms)');
+      console.error('[TEC Pi Auth] Authentication timed out after', elapsed, 'ms (timeout:', effectiveTimeout, 'ms)');
       reject(new Error(
         'انتهت مهلة المصادقة. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
         'Authentication timed out. Please check your internet connection and try again.'
       ));
-    }, timeout);
+    }, effectiveTimeout);
 
     console.log('[TEC Pi Auth] Calling window.Pi.authenticate()...');
     window.Pi.authenticate(
