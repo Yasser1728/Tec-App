@@ -13,11 +13,24 @@ const router = Router();
 router.post(
   '/create',
   [
-    body('userId').notEmpty(),
-    body('amount').isFloat({ min: 0 }),
-    body('currency').optional(),
-    body('payment_method').isIn(['pi', 'card', 'wallet']),
-    body('metadata').optional().isObject(),
+    body('userId')
+      .notEmpty().withMessage('userId is required')
+      .isUUID().withMessage('userId must be a valid UUID'),
+    body('amount')
+      .notEmpty().withMessage('amount is required')
+      .isFloat({ min: 0.01 }).withMessage('amount must be greater than 0'),
+    body('currency')
+      .optional()
+      .isString().withMessage('currency must be a string')
+      .isLength({ min: 2, max: 3 }).withMessage('currency must be 2-3 characters')
+      .toUpperCase(),
+    body('payment_method')
+      .notEmpty().withMessage('payment_method is required')
+      .toLowerCase()
+      .isIn(['pi', 'card', 'wallet']).withMessage('payment_method must be one of: pi, card, wallet'),
+    body('metadata')
+      .optional()
+      .isObject().withMessage('metadata must be a valid JSON object'),
   ],
   createPayment
 );
@@ -26,8 +39,13 @@ router.post(
 router.post(
   '/approve',
   [
-    body('payment_id').isUUID(),
-    body('pi_payment_id').optional(),
+    body('payment_id')
+      .notEmpty().withMessage('payment_id is required')
+      .isUUID().withMessage('payment_id must be a valid UUID'),
+    body('pi_payment_id')
+      .optional()
+      .isString().withMessage('pi_payment_id must be a string')
+      .trim(),
   ],
   approvePayment
 );
@@ -36,8 +54,13 @@ router.post(
 router.post(
   '/complete',
   [
-    body('payment_id').isUUID(),
-    body('transaction_id').optional(),
+    body('payment_id')
+      .notEmpty().withMessage('payment_id is required')
+      .isUUID().withMessage('payment_id must be a valid UUID'),
+    body('transaction_id')
+      .optional()
+      .isString().withMessage('transaction_id must be a string')
+      .trim(),
   ],
   completePayment
 );
@@ -45,7 +68,11 @@ router.post(
 // GET /payments/:id/status - Get payment status
 router.get(
   '/:id/status',
-  [param('id').isUUID()],
+  [
+    param('id')
+      .notEmpty().withMessage('id is required')
+      .isUUID().withMessage('id must be a valid UUID')
+  ],
   getPaymentStatus
 );
 

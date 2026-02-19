@@ -1,24 +1,41 @@
 import { Request, Response } from 'express';
-import { validationResult } from 'express-validator';
+import { validationResult, ValidationError } from 'express-validator';
 import { prisma } from '../config/database';
+import { 
+  PrismaClientKnownRequestError,
+  PrismaClientInitializationError,
+  PrismaClientRustPanicError 
+} from '@prisma/client/runtime/library';
+
+// Helper function to safely get metadata as an object
+const getMetadataObject = (metadata: unknown): Record<string, unknown> => {
+  return typeof metadata === 'object' && metadata !== null ? metadata as Record<string, unknown> : {};
+};
 
 // Create a new payment (Stage 1: Created)
 export const createPayment = async (req: Request, res: Response): Promise<void> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.warn('CreatePayment validation failed:', { errors: errors.array(), body: req.body });
       res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input data',
-          details: errors.array(),
+          message: 'Invalid input data. Please check the request parameters.',
+          details: errors.array().map((err: ValidationError) => ({
+            field: 'path' in err ? err.path : 'unknown',
+            message: err.msg,
+            value: 'value' in err ? err.value : undefined,
+          })),
         },
       });
       return;
     }
 
     const { userId, amount, currency = 'PI', payment_method, metadata } = req.body;
+    
+    console.log('Creating payment:', { userId, amount, currency, payment_method });
 
     const payment = await prisma.payment.create({
       data: {
@@ -31,12 +48,52 @@ export const createPayment = async (req: Request, res: Response): Promise<void> 
       },
     });
 
+    console.log('Payment created successfully:', { paymentId: payment.id, status: payment.status });
+
     res.status(201).json({
       success: true,
       data: { payment },
     });
   } catch (error) {
     console.error('CreatePayment error:', error);
+    
+    // Handle Prisma-specific errors
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        res.status(409).json({
+          success: false,
+          error: {
+            code: 'DUPLICATE_PAYMENT',
+            message: 'A payment with this information already exists',
+          },
+        });
+        return;
+      }
+      if (error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_USER',
+            message: 'User ID does not exist in the system',
+          },
+        });
+        return;
+      }
+    }
+    
+    // Handle database connection errors
+    if (error instanceof PrismaClientInitializationError || 
+        error instanceof PrismaClientRustPanicError) {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Database connection failed. Please check DATABASE_URL configuration.',
+        },
+      });
+      return;
+    }
+    
     res.status(500).json({
       success: false,
       error: {
@@ -52,18 +109,25 @@ export const approvePayment = async (req: Request, res: Response): Promise<void>
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.warn('ApprovePayment validation failed:', { errors: errors.array(), body: req.body });
       res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input data',
-          details: errors.array(),
+          message: 'Invalid input data. Please check the request parameters.',
+          details: errors.array().map((err: ValidationError) => ({
+            field: 'path' in err ? err.path : 'unknown',
+            message: err.msg,
+            value: 'value' in err ? err.value : undefined,
+          })),
         },
       });
       return;
     }
 
     const { payment_id, pi_payment_id } = req.body;
+    
+    console.log('Approving payment:', { payment_id, pi_payment_id });
 
     // Find payment
     const payment = await prisma.payment.findUnique({
@@ -71,6 +135,7 @@ export const approvePayment = async (req: Request, res: Response): Promise<void>
     });
 
     if (!payment) {
+      console.warn('Payment not found:', { payment_id });
       res.status(404).json({
         success: false,
         error: {
@@ -82,11 +147,12 @@ export const approvePayment = async (req: Request, res: Response): Promise<void>
     }
 
     if (payment.status !== 'created') {
+      console.warn('Invalid payment status for approval:', { payment_id, currentStatus: payment.status });
       res.status(400).json({
         success: false,
         error: {
-          code: 'VALIDATION_ERROR',
-          message: `Payment cannot be approved from status: ${payment.status}`,
+          code: 'INVALID_STATUS',
+          message: `Payment cannot be approved from status: ${payment.status}. Expected status: created`,
         },
       });
       return;
@@ -102,12 +168,52 @@ export const approvePayment = async (req: Request, res: Response): Promise<void>
       },
     });
 
+    console.log('Payment approved successfully:', { paymentId: updatedPayment.id, status: updatedPayment.status });
+
     res.json({
       success: true,
       data: { payment: updatedPayment },
     });
   } catch (error) {
     console.error('ApprovePayment error:', error);
+    
+    // Handle Prisma-specific errors
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        res.status(410).json({
+          success: false,
+          error: {
+            code: 'PAYMENT_MODIFIED',
+            message: 'Payment was modified or deleted during approval',
+          },
+        });
+        return;
+      }
+      if (error.code === 'P2002') {
+        res.status(409).json({
+          success: false,
+          error: {
+            code: 'DUPLICATE_PI_PAYMENT',
+            message: 'This Pi payment ID is already associated with another payment',
+          },
+        });
+        return;
+      }
+    }
+    
+    // Handle database connection errors
+    if (error instanceof PrismaClientInitializationError || 
+        error instanceof PrismaClientRustPanicError) {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Database connection failed. Please check DATABASE_URL configuration.',
+        },
+      });
+      return;
+    }
+    
     res.status(500).json({
       success: false,
       error: {
@@ -123,18 +229,25 @@ export const completePayment = async (req: Request, res: Response): Promise<void
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.warn('CompletePayment validation failed:', { errors: errors.array(), body: req.body });
       res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input data',
-          details: errors.array(),
+          message: 'Invalid input data. Please check the request parameters.',
+          details: errors.array().map((err: ValidationError) => ({
+            field: 'path' in err ? err.path : 'unknown',
+            message: err.msg,
+            value: 'value' in err ? err.value : undefined,
+          })),
         },
       });
       return;
     }
 
     const { payment_id, transaction_id } = req.body;
+    
+    console.log('Completing payment:', { payment_id, transaction_id });
 
     // Find payment
     const payment = await prisma.payment.findUnique({
@@ -142,6 +255,7 @@ export const completePayment = async (req: Request, res: Response): Promise<void
     });
 
     if (!payment) {
+      console.warn('Payment not found:', { payment_id });
       res.status(404).json({
         success: false,
         error: {
@@ -153,11 +267,12 @@ export const completePayment = async (req: Request, res: Response): Promise<void
     }
 
     if (payment.status !== 'approved') {
+      console.warn('Invalid payment status for completion:', { payment_id, currentStatus: payment.status });
       res.status(400).json({
         success: false,
         error: {
-          code: 'VALIDATION_ERROR',
-          message: `Payment cannot be completed from status: ${payment.status}`,
+          code: 'INVALID_STATUS',
+          message: `Payment cannot be completed from status: ${payment.status}. Expected status: approved`,
         },
       });
       return;
@@ -170,11 +285,13 @@ export const completePayment = async (req: Request, res: Response): Promise<void
         status: 'completed',
         completed_at: new Date(),
         metadata: {
-          ...(payment.metadata as object || {}),
+          ...getMetadataObject(payment.metadata),
           transaction_id,
         },
       },
     });
+
+    console.log('Payment completed successfully:', { paymentId: updatedPayment.id, status: updatedPayment.status });
 
     res.json({
       success: true,
@@ -182,6 +299,34 @@ export const completePayment = async (req: Request, res: Response): Promise<void
     });
   } catch (error) {
     console.error('CompletePayment error:', error);
+    
+    // Handle Prisma-specific errors
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        res.status(410).json({
+          success: false,
+          error: {
+            code: 'PAYMENT_MODIFIED',
+            message: 'Payment was modified or deleted during completion',
+          },
+        });
+        return;
+      }
+    }
+    
+    // Handle database connection errors
+    if (error instanceof PrismaClientInitializationError || 
+        error instanceof PrismaClientRustPanicError) {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Database connection failed. Please check DATABASE_URL configuration.',
+        },
+      });
+      return;
+    }
+    
     res.status(500).json({
       success: false,
       error: {
@@ -197,12 +342,17 @@ export const getPaymentStatus = async (req: Request, res: Response): Promise<voi
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.warn('GetPaymentStatus validation failed:', { errors: errors.array(), params: req.params });
       res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input data',
-          details: errors.array(),
+          message: 'Invalid input data. Please check the request parameters.',
+          details: errors.array().map((err: ValidationError) => ({
+            field: 'path' in err ? err.path : 'unknown',
+            message: err.msg,
+            value: 'value' in err ? err.value : undefined,
+          })),
         },
       });
       return;
@@ -226,6 +376,7 @@ export const getPaymentStatus = async (req: Request, res: Response): Promise<voi
     });
 
     if (!payment) {
+      console.warn('Payment not found:', { id });
       res.status(404).json({
         success: false,
         error: {
@@ -242,6 +393,20 @@ export const getPaymentStatus = async (req: Request, res: Response): Promise<voi
     });
   } catch (error) {
     console.error('GetPaymentStatus error:', error);
+    
+    // Handle database connection errors
+    if (error instanceof PrismaClientInitializationError || 
+        error instanceof PrismaClientRustPanicError) {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Database connection failed. Please check DATABASE_URL configuration.',
+        },
+      });
+      return;
+    }
+    
     res.status(500).json({
       success: false,
       error: {
