@@ -11,6 +11,24 @@ const PORT = process.env.PORT || 5003;
 const SERVICE_VERSION = process.env.SERVICE_VERSION || '1.0.0';
 const serviceStartTime = Date.now();
 
+// Validate critical environment variables
+const requiredEnvVars = ['DATABASE_URL'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+  console.error('Please check your .env file and ensure all required variables are set.');
+  process.exit(1);
+}
+
+// Log important configuration on startup
+console.log('🔧 Payment Service Configuration:');
+console.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+console.log(`  - PORT: ${PORT}`);
+console.log(`  - CORS_ORIGIN: ${process.env.CORS_ORIGIN || '*'}`);
+console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✓ Set' : '✗ Not set'}`);
+console.log(`  - PI_API_KEY: ${process.env.PI_API_KEY ? '✓ Set' : '✗ Not set (optional)'}`);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
