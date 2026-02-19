@@ -66,6 +66,13 @@ export CORS_ORIGIN="http://localhost:3000"
 export PI_API_KEY="your_pi_network_api_key"
 ```
 
+> **⚠️ Important for Payment Service:**
+> - **`DATABASE_URL`**: Required for payment processing. Automatically set by docker-compose from `POSTGRES_PASSWORD`.
+> - **`CORS_ORIGIN`**: Must match your frontend URL. Use `http://localhost:3000` for local development and your production URL (e.g., `https://tec-app.vercel.app`) in production.
+> - **`PI_API_KEY`**: Required for Pi Network payment integration. Obtain from [Pi Developer Portal](https://developers.minepi.com/).
+> 
+> If the payment service fails to start or returns database errors, verify these environment variables are correctly set.
+
 3. **Start the platform:**
 ```bash
 docker-compose up -d
@@ -109,6 +116,33 @@ docker-compose up -d
 | POST | `/api/payments/approve` | Approve payment |
 | POST | `/api/payments/complete` | Complete payment |
 | GET | `/api/payments/{id}/status` | Get payment status |
+
+#### Payment Workflow
+
+The payment service implements a three-stage payment workflow:
+
+1. **Create** (`POST /api/payments/create`): Initiates a payment with user ID, amount, and payment method.
+   - Required fields: `userId` (UUID), `amount` (> 0), `payment_method` (pi/card/wallet)
+   - Optional: `currency` (default: PI), `metadata` (JSON object)
+
+2. **Approve** (`POST /api/payments/approve`): Approves a created payment, typically after user confirmation.
+   - Required: `payment_id` (UUID)
+   - Optional: `pi_payment_id` (for Pi Network payments)
+
+3. **Complete** (`POST /api/payments/complete`): Finalizes an approved payment with transaction details.
+   - Required: `payment_id` (UUID)
+   - Optional: `transaction_id` (blockchain transaction ID)
+
+#### Error Codes
+
+The payment service returns specific error codes for better debugging:
+- `VALIDATION_ERROR`: Invalid input data (check field details)
+- `NOT_FOUND`: Payment not found
+- `INVALID_STATUS`: Payment cannot transition from current status
+- `INVALID_USER`: User ID does not exist
+- `DATABASE_UNAVAILABLE`: Database connection failed (check `DATABASE_URL`)
+- `DUPLICATE_PAYMENT`: Payment already exists
+- `DUPLICATE_PI_PAYMENT`: Pi payment ID already in use
 
 ## 🛠️ Tech Stack
 
