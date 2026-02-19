@@ -24,9 +24,9 @@ export const createPayment = async (req: Request, res: Response): Promise<void> 
           code: 'VALIDATION_ERROR',
           message: 'Invalid input data. Please check the request parameters.',
           details: errors.array().map((err: ValidationError) => ({
-            field: err.type === 'field' ? err.path : 'unknown',
+            field: 'path' in err ? err.path : 'unknown',
             message: err.msg,
-            value: err.type === 'field' ? err.value : undefined,
+            value: 'value' in err ? err.value : undefined,
           })),
         },
       });
@@ -116,9 +116,9 @@ export const approvePayment = async (req: Request, res: Response): Promise<void>
           code: 'VALIDATION_ERROR',
           message: 'Invalid input data. Please check the request parameters.',
           details: errors.array().map((err: ValidationError) => ({
-            field: err.type === 'field' ? err.path : 'unknown',
+            field: 'path' in err ? err.path : 'unknown',
             message: err.msg,
-            value: err.type === 'field' ? err.value : undefined,
+            value: 'value' in err ? err.value : undefined,
           })),
         },
       });
@@ -236,9 +236,9 @@ export const completePayment = async (req: Request, res: Response): Promise<void
           code: 'VALIDATION_ERROR',
           message: 'Invalid input data. Please check the request parameters.',
           details: errors.array().map((err: ValidationError) => ({
-            field: err.type === 'field' ? err.path : 'unknown',
+            field: 'path' in err ? err.path : 'unknown',
             message: err.msg,
-            value: err.type === 'field' ? err.value : undefined,
+            value: 'value' in err ? err.value : undefined,
           })),
         },
       });
@@ -349,9 +349,9 @@ export const getPaymentStatus = async (req: Request, res: Response): Promise<voi
           code: 'VALIDATION_ERROR',
           message: 'Invalid input data. Please check the request parameters.',
           details: errors.array().map((err: ValidationError) => ({
-            field: err.type === 'field' ? err.path : 'unknown',
+            field: 'path' in err ? err.path : 'unknown',
             message: err.msg,
-            value: err.type === 'field' ? err.value : undefined,
+            value: 'value' in err ? err.value : undefined,
           })),
         },
       });
