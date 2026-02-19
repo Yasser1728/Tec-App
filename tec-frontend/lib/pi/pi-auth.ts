@@ -55,6 +55,7 @@ export const waitForPiSDK = (timeout = 15000): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Check if Pi SDK init failed
     if (typeof window !== 'undefined' && window.__TEC_PI_ERROR) {
+      // No need to register listeners if SDK already failed
       reject(new Error(
         'تعذر تحميل Pi SDK. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
         'Pi SDK failed to load. Please check your internet connection and try again.'

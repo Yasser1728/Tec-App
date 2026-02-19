@@ -100,10 +100,13 @@ export const createU2APayment = async (
     const COMPLETION_TIMEOUT_MS = 3 * 60 * 1000;
     
     let paymentTimedOut = false;
-    let currentStage: 'approval' | 'completion' = 'approval';
     let paymentTimer: NodeJS.Timeout | null = null;
     
     const startApprovalTimer = () => {
+      // Clear any existing timer first
+      if (paymentTimer) {
+        clearTimeout(paymentTimer);
+      }
       console.log(`[Pi Payment] Starting approval timeout: ${APPROVAL_TIMEOUT_MS}ms`);
       paymentTimer = setTimeout(() => {
         paymentTimedOut = true;
@@ -116,10 +119,10 @@ export const createU2APayment = async (
     };
     
     const startCompletionTimer = () => {
+      // Clear existing timer
       if (paymentTimer) {
         clearTimeout(paymentTimer);
       }
-      currentStage = 'completion';
       console.log(`[Pi Payment] Starting completion timeout: ${COMPLETION_TIMEOUT_MS}ms`);
       paymentTimer = setTimeout(() => {
         paymentTimedOut = true;
