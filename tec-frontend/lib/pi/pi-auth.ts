@@ -73,13 +73,13 @@ export const waitForPiSDK = (timeout = 15000): Promise<void> => {
     }
     
     const startTime = Date.now();
-    console.log('[TEC Pi Auth] Waiting for Pi SDK (timeout: ' + timeout + 'ms)...');
+    console.log(`[TEC Pi Auth] Waiting for Pi SDK (timeout: ${timeout}ms)...`);
     
     const timer = setTimeout(() => {
       window.removeEventListener('tec-pi-ready', onReady);
       window.removeEventListener('tec-pi-error', onError);
       const elapsed = Date.now() - startTime;
-      console.error('[TEC Pi Auth] Pi SDK wait timeout after ' + elapsed + 'ms');
+      console.error(`[TEC Pi Auth] Pi SDK wait timeout after ${elapsed}ms`);
       reject(new Error(
         'تعذر تحميل Pi SDK. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
         'Pi SDK failed to load. Please check your internet connection and try again.'
@@ -88,7 +88,7 @@ export const waitForPiSDK = (timeout = 15000): Promise<void> => {
     
     const onReady = () => {
       const elapsed = Date.now() - startTime;
-      console.log('[TEC Pi Auth] Pi SDK ready after ' + elapsed + 'ms');
+      console.log(`[TEC Pi Auth] Pi SDK ready after ${elapsed}ms`);
       clearTimeout(timer);
       window.removeEventListener('tec-pi-error', onError);
       resolve();
@@ -97,7 +97,7 @@ export const waitForPiSDK = (timeout = 15000): Promise<void> => {
     const onError = (event: Event) => {
       const elapsed = Date.now() - startTime;
       const detail = (event as CustomEvent).detail;
-      console.error('[TEC Pi Auth] Pi SDK init error after ' + elapsed + 'ms:', detail);
+      console.error(`[TEC Pi Auth] Pi SDK init error after ${elapsed}ms:`, detail);
       clearTimeout(timer);
       window.removeEventListener('tec-pi-ready', onReady);
       reject(new Error(
@@ -113,13 +113,15 @@ export const waitForPiSDK = (timeout = 15000): Promise<void> => {
 
 // Wrap authenticate with timeout
 // Default timeout increased from 30s to 45s to account for SDK wait time + network latency
-// Can be overridden via NEXT_PUBLIC_PI_AUTH_TIMEOUT environment variable
+// Can be overridden via NEXT_PUBLIC_PI_AUTH_TIMEOUT environment variable (set at build time)
 const getAuthTimeout = (): number => {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_PI_AUTH_TIMEOUT) {
-    const envTimeout = parseInt(process.env.NEXT_PUBLIC_PI_AUTH_TIMEOUT, 10);
-    if (!isNaN(envTimeout) && envTimeout > 0) {
-      return envTimeout;
-    }
+  const envTimeout = process.env.NEXT_PUBLIC_PI_AUTH_TIMEOUT
+    ? parseInt(process.env.NEXT_PUBLIC_PI_AUTH_TIMEOUT, 10)
+    : 45000;
+  
+  // Validate and cap timeout (must be positive, max 2 minutes for safety)
+  if (!isNaN(envTimeout) && envTimeout > 0 && envTimeout < 120000) {
+    return envTimeout;
   }
   return 45000; // Default 45 seconds
 };
@@ -137,11 +139,11 @@ const authenticateWithTimeout = async (timeout?: number): Promise<PiAuthResult> 
     console.log('[TEC Pi Auth] Starting authentication...');
     console.log('[TEC Pi Auth] window.Pi exists:', typeof window.Pi !== 'undefined');
     console.log('[TEC Pi Auth] Requested scopes:', ['username', 'payments', 'wallet_address']);
-    console.log('[TEC Pi Auth] Timeout value:', effectiveTimeout, 'ms');
+    console.log(`[TEC Pi Auth] Timeout value: ${effectiveTimeout}ms`);
     
     const timer = setTimeout(() => {
       const elapsed = Date.now() - startTime;
-      console.error('[TEC Pi Auth] Authentication timed out after', elapsed, 'ms (timeout:', effectiveTimeout, 'ms)');
+      console.error(`[TEC Pi Auth] Authentication timed out after ${elapsed}ms (timeout: ${effectiveTimeout}ms)`);
       reject(new Error(
         'انتهت مهلة المصادقة. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
         'Authentication timed out. Please check your internet connection and try again.'
@@ -155,12 +157,12 @@ const authenticateWithTimeout = async (timeout?: number): Promise<PiAuthResult> 
     ).then(result => {
       clearTimeout(timer);
       const elapsed = Date.now() - startTime;
-      console.log('[TEC Pi Auth] Authentication successful after', elapsed, 'ms:', { uid: result.user.uid, username: result.user.username });
+      console.log(`[TEC Pi Auth] Authentication successful after ${elapsed}ms:`, { uid: result.user.uid, username: result.user.username });
       resolve(result);
     }).catch(err => {
       clearTimeout(timer);
       const elapsed = Date.now() - startTime;
-      console.error('[TEC Pi Auth] Authentication failed after', elapsed, 'ms with error:', err);
+      console.error(`[TEC Pi Auth] Authentication failed after ${elapsed}ms with error:`, err);
       reject(err);
     });
   });

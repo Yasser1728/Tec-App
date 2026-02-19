@@ -104,10 +104,10 @@ export const createU2APayment = async (
     let paymentTimer: NodeJS.Timeout | null = null;
     
     const startApprovalTimer = () => {
-      console.log('[Pi Payment] Starting approval timeout:', APPROVAL_TIMEOUT_MS, 'ms');
+      console.log(`[Pi Payment] Starting approval timeout: ${APPROVAL_TIMEOUT_MS}ms`);
       paymentTimer = setTimeout(() => {
         paymentTimedOut = true;
-        console.error('[Pi Payment] Approval stage timed out after', APPROVAL_TIMEOUT_MS, 'ms');
+        console.error(`[Pi Payment] Approval stage timed out after ${APPROVAL_TIMEOUT_MS}ms`);
         reject(new Error(
           'انتهت مهلة موافقة الدفع. يرجى المحاولة مرة أخرى.\n' +
           'Payment approval timed out. Please try again.'
@@ -120,10 +120,10 @@ export const createU2APayment = async (
         clearTimeout(paymentTimer);
       }
       currentStage = 'completion';
-      console.log('[Pi Payment] Starting completion timeout:', COMPLETION_TIMEOUT_MS, 'ms');
+      console.log(`[Pi Payment] Starting completion timeout: ${COMPLETION_TIMEOUT_MS}ms`);
       paymentTimer = setTimeout(() => {
         paymentTimedOut = true;
-        console.error('[Pi Payment] Completion stage timed out after', COMPLETION_TIMEOUT_MS, 'ms');
+        console.error(`[Pi Payment] Completion stage timed out after ${COMPLETION_TIMEOUT_MS}ms`);
         reject(new Error(
           'انتهت مهلة إكمال الدفع. يرجى المحاولة مرة أخرى.\n' +
           'Payment completion timed out. Please try again.'

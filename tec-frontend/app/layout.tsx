@@ -8,9 +8,11 @@ export const metadata = {
 
 const piSandbox = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false';
 // SDK timeout: configurable via env var, default 25 seconds (increased from 15s to handle slow networks)
-const sdkTimeout = process.env.NEXT_PUBLIC_PI_SDK_TIMEOUT 
+// Environment variable is resolved at build time, validated to be a positive number
+const sdkTimeoutEnv = process.env.NEXT_PUBLIC_PI_SDK_TIMEOUT 
   ? parseInt(process.env.NEXT_PUBLIC_PI_SDK_TIMEOUT, 10) 
   : 25000;
+const sdkTimeout = (sdkTimeoutEnv > 0 && sdkTimeoutEnv < 120000) ? sdkTimeoutEnv : 25000; // Cap at 2 minutes for safety
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
