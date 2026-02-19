@@ -70,6 +70,13 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
+      - name: Install service dependencies
+        run: |
+          cd tec-api-gateway && npm ci && cd ..
+          cd tec-auth-service && npm ci && cd ..
+          cd tec-wallet-service && npm ci && cd ..
+          cd tec-payment-service && npm ci && cd ..
+
       - name: Run unit tests
         run: npm run test:coverage
 
