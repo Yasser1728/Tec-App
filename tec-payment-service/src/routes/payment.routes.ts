@@ -22,11 +22,12 @@ router.post(
     body('currency')
       .optional()
       .isString().withMessage('currency must be a string')
+      .isLength({ min: 2, max: 3 }).withMessage('currency must be 2-3 characters')
       .toUpperCase(),
     body('payment_method')
       .notEmpty().withMessage('payment_method is required')
-      .isIn(['pi', 'card', 'wallet']).withMessage('payment_method must be one of: pi, card, wallet')
-      .toLowerCase(),
+      .toLowerCase()
+      .isIn(['pi', 'card', 'wallet']).withMessage('payment_method must be one of: pi, card, wallet'),
     body('metadata')
       .optional()
       .isObject().withMessage('metadata must be a valid JSON object'),

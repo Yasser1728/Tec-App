@@ -7,6 +7,11 @@ import {
   PrismaClientRustPanicError 
 } from '@prisma/client/runtime/library';
 
+// Helper function to safely get metadata as an object
+const getMetadataObject = (metadata: unknown): Record<string, unknown> => {
+  return typeof metadata === 'object' && metadata !== null ? metadata as Record<string, unknown> : {};
+};
+
 // Create a new payment (Stage 1: Created)
 export const createPayment = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -31,9 +36,6 @@ export const createPayment = async (req: Request, res: Response): Promise<void> 
     const { userId, amount, currency = 'PI', payment_method, metadata } = req.body;
     
     console.log('Creating payment:', { userId, amount, currency, payment_method });
-
-    // Check database connectivity
-    await prisma.$queryRaw`SELECT 1`;
 
     const payment = await prisma.payment.create({
       data: {
@@ -283,7 +285,7 @@ export const completePayment = async (req: Request, res: Response): Promise<void
         status: 'completed',
         completed_at: new Date(),
         metadata: {
-          ...(typeof payment.metadata === 'object' && payment.metadata !== null ? payment.metadata : {}),
+          ...getMetadataObject(payment.metadata),
           transaction_id,
         },
       },

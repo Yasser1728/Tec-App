@@ -83,7 +83,6 @@ describe('Payment Service Integration Tests', () => {
         updated_at: new Date(),
       };
 
-      mockPrismaClient.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
       mockPrismaClient.payment.create.mockResolvedValue(mockPayment);
 
       const response = await request(app)
