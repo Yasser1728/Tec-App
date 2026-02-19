@@ -1,5 +1,38 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "tec-api-gateway/package.json",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "tec-payment-service/**",
+          "tec-wallet-service/**",
+          "tec-auth-service/**",
+          "prisma/**",
+          "packages/tec-core-sdk/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "tec-api-gateway/$1"
+    },
+    {
+      "src": "/payments/(.*)",
+      "dest": "tec-payment-service/$1"
+    },
+    {
+      "src": "/wallet/(.*)",
+      "dest": "tec-wallet-service/$1"
+    },
+    {
+      "src": "/auth/(.*)",
+      "dest": "tec-auth-service/$1"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
