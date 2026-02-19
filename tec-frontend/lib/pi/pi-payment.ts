@@ -91,22 +91,54 @@ export const createU2APayment = async (
       return;
     }
 
-    // Payment timeout: 5 minutes (300,000 milliseconds)
-    const PAYMENT_TIMEOUT_MS = 5 * 60 * 1000;
-    let paymentTimedOut = false;
+    // Payment timeout: Separate timeouts for approval and completion stages
+    // Approval: 3 minutes (user needs time to review and approve)
+    // Completion: 3 minutes (backend processing and blockchain confirmation)
+    const APPROVAL_TIMEOUT_MS = 3 * 60 * 1000;
+    const COMPLETION_TIMEOUT_MS = 3 * 60 * 1000;
     
-    const paymentTimer = setTimeout(() => {
-      paymentTimedOut = true;
-      reject(new Error(
-        'انتهت مهلة الدفع. يرجى المحاولة مرة أخرى.\n' +
-        'Payment timed out. Please try again.'
-      ));
-    }, PAYMENT_TIMEOUT_MS);
+    let paymentTimedOut = false;
+    let currentStage: 'approval' | 'completion' = 'approval';
+    let paymentTimer: NodeJS.Timeout | null = null;
+    
+    const startApprovalTimer = () => {
+      console.log('[Pi Payment] Starting approval timeout:', APPROVAL_TIMEOUT_MS, 'ms');
+      paymentTimer = setTimeout(() => {
+        paymentTimedOut = true;
+        console.error('[Pi Payment] Approval stage timed out after', APPROVAL_TIMEOUT_MS, 'ms');
+        reject(new Error(
+          'انتهت مهلة موافقة الدفع. يرجى المحاولة مرة أخرى.\n' +
+          'Payment approval timed out. Please try again.'
+        ));
+      }, APPROVAL_TIMEOUT_MS);
+    };
+    
+    const startCompletionTimer = () => {
+      if (paymentTimer) {
+        clearTimeout(paymentTimer);
+      }
+      currentStage = 'completion';
+      console.log('[Pi Payment] Starting completion timeout:', COMPLETION_TIMEOUT_MS, 'ms');
+      paymentTimer = setTimeout(() => {
+        paymentTimedOut = true;
+        console.error('[Pi Payment] Completion stage timed out after', COMPLETION_TIMEOUT_MS, 'ms');
+        reject(new Error(
+          'انتهت مهلة إكمال الدفع. يرجى المحاولة مرة أخرى.\n' +
+          'Payment completion timed out. Please try again.'
+        ));
+      }, COMPLETION_TIMEOUT_MS);
+    };
 
     // Helper to clear timeout
     const clearPaymentTimer = () => {
-      clearTimeout(paymentTimer);
+      if (paymentTimer) {
+        clearTimeout(paymentTimer);
+        paymentTimer = null;
+      }
     };
+    
+    // Start approval timer
+    startApprovalTimer();
 
     window.Pi.createPayment(
       { amount, memo, metadata },
@@ -151,6 +183,9 @@ export const createU2APayment = async (
             const result = await res.json();
             console.log('[Pi Payment] Server approval successful:', result);
             onDiagnostic?.('approval', `Server approval successful for payment: ${paymentId}`, { paymentId, result });
+            
+            // Switch to completion timer after successful approval
+            startCompletionTimer();
           } catch (err) {
             console.error('[Pi Payment] Server approval error:', err);
             console.warn('[Pi Payment] Incomplete payment may remain:', paymentId);
