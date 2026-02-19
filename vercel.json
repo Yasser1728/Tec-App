@@ -1,13 +1,5 @@
 {
-  "//1": "=== TEC Backend - Vercel Serverless Deployment Configuration ===",
-  "//2": "Deploys all backend microservices (tec-api-gateway, tec-payment-service, tec-wallet-service, tec-auth-service) as Vercel serverless functions under a single 'tec-backend' project.",
-  "//3": "Required Vercel environment variables: DATABASE_URL, PI_APP_ID, PI_API_KEY, JWT_SECRET, JWT_REFRESH_SECRET, NEXT_PUBLIC_PI_ENV, NEXT_PUBLIC_API_URL",
-  "//4": "Root directory: repo root (empty in Vercel dashboard) — all microservices are included in the deployment.",
-
-  "//build": "=== BUILD CONFIGURATION === Each microservice entry point (src/index.ts) is compiled by @vercel/node into a standalone serverless function. The entry file exports the Express app as default export. maxLambdaSize set to 50mb to accommodate Prisma client and all service dependencies.",
-
   "version": 2,
-
   "builds": [
     {
       "src": "tec-api-gateway/src/index.ts",
@@ -30,14 +22,6 @@
       "config": { "maxLambdaSize": "50mb" }
     }
   ],
-
-  "//routes": "=== ROUTE CONFIGURATION === Routes are evaluated top-to-bottom; first match wins. Each route maps an API path prefix to the corresponding microservice serverless function. The Express app in each function handles internal sub-routing.",
-
-  "//payment-routes": "=== PAYMENT ROUTES (CRITICAL — Pi Network Callbacks) === The Pi SDK payment flow calls: (1) POST /api/payments/approve for server-side approval, (2) POST /api/payments/complete for server-side completion. All /api/payments/* requests are routed to the payment service.",
-  "//payment-warning": "⚠️ WARNING: After every deployment, verify payment routes are functional. Test: curl -X POST https://<domain>/api/payments/approve -H 'Content-Type: application/json' -d '{\"payment_id\":\"test\"}'. Also verify: POST /api/payments/create, POST /api/payments/complete, GET /api/payments/<id>/status. If any return 404 or 500, check: (1) vercel.json route mapping, (2) service /api/payments mount in src/index.ts, (3) DATABASE_URL and PI_API_KEY environment variables in Vercel dashboard.",
-
-  "//auth-routes": "Auth service handles multiple route modules: /api/auth/*, /api/subscriptions/*, /api/kyc/*, /api/security/*, /api/profile/*. Each is routed to the same auth service function which mounts all sub-routers.",
-
   "routes": [
     { "src": "/api/payments(.*)", "dest": "tec-payment-service/src/index.ts" },
     { "src": "/api/wallets(.*)", "dest": "tec-wallet-service/src/index.ts" },
@@ -49,9 +33,6 @@
     { "src": "/health", "dest": "tec-api-gateway/src/index.ts" },
     { "src": "/(.*)", "dest": "tec-api-gateway/src/index.ts" }
   ],
-
-  "//headers": "=== SECURITY HEADERS === Content-Security-Policy allows Pi SDK domains (sdk.minepi.com, api.minepi.com). Cross-Origin policies set to 'unsafe-none' for Pi browser compatibility. HSTS, X-Content-Type-Options, and other modern security headers are included. CORS is handled by Express cors() middleware in each service (not in headers) to properly negotiate Access-Control-Allow-Credentials with dynamic origins.",
-
   "headers": [
     {
       "source": "/(.*)",
@@ -71,14 +52,5 @@
         { "key": "Cross-Origin-Resource-Policy", "value": "cross-origin" }
       ]
     }
-  ],
-
-  "//functions": "=== FUNCTION CONFIGURATION === Memory and maxDuration per serverless function. Payment service has maxDuration=30s to handle Pi Network API calls, webhook processing, and network latency. Wallet and auth services use 15s. Gateway uses minimal resources (512MB, 10s).",
-
-  "functions": {
-    "tec-payment-service/src/index.ts": { "memory": 1024, "maxDuration": 30 },
-    "tec-wallet-service/src/index.ts": { "memory": 1024, "maxDuration": 15 },
-    "tec-auth-service/src/index.ts": { "memory": 1024, "maxDuration": 15 },
-    "tec-api-gateway/src/index.ts": { "memory": 512, "maxDuration": 10 }
-  }
+  ]
 }
