@@ -45,8 +45,9 @@ app.get('/health', (_req, res) => {
   res.json(response);
 });
 
-// Routes
+// Routes — mounted at both paths for local dev and Vercel serverless compatibility
 app.use('/wallets', walletRoutes);
+app.use('/api/wallets', walletRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
