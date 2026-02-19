@@ -23,6 +23,22 @@
     }
   ],
   "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.minepi.com; connect-src 'self' https://api.minepi.com https://sdk.minepi.com https://*.minepi.com; frame-ancestors 'self' https://*.minepi.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:;",
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+        "Cross-Origin-Opener-Policy": "unsafe-none",
+        "Cross-Origin-Embedder-Policy": "unsafe-none",
+        "Cross-Origin-Resource-Policy": "cross-origin"
+      },
+      "continue": true
+    },
     { "src": "/api/payments(.*)", "dest": "tec-payment-service/src/index.ts" },
     { "src": "/api/wallets(.*)", "dest": "tec-wallet-service/src/index.ts" },
     { "src": "/api/auth(.*)", "dest": "tec-auth-service/src/index.ts" },
@@ -32,25 +48,5 @@
     { "src": "/api/profile(.*)", "dest": "tec-auth-service/src/index.ts" },
     { "src": "/health", "dest": "tec-api-gateway/src/index.ts" },
     { "src": "/(.*)", "dest": "tec-api-gateway/src/index.ts" }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.minepi.com; connect-src 'self' https://api.minepi.com https://sdk.minepi.com https://*.minepi.com; frame-ancestors 'self' https://*.minepi.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:;"
-        },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Cross-Origin-Opener-Policy", "value": "unsafe-none" },
-        { "key": "Cross-Origin-Embedder-Policy", "value": "unsafe-none" },
-        { "key": "Cross-Origin-Resource-Policy", "value": "cross-origin" }
-      ]
-    }
   ]
 }
