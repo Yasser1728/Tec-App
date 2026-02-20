@@ -39,13 +39,13 @@
       },
       "continue": true
     },
-    { "src": "/api/payments(.*)", "dest": "tec-payment-service/src/index.ts" },
-    { "src": "/api/wallets(.*)", "dest": "tec-wallet-service/src/index.ts" },
-    { "src": "/api/auth(.*)", "dest": "tec-auth-service/src/index.ts" },
-    { "src": "/api/subscriptions(.*)", "dest": "tec-auth-service/src/index.ts" },
-    { "src": "/api/kyc(.*)", "dest": "tec-auth-service/src/index.ts" },
-    { "src": "/api/security(.*)", "dest": "tec-auth-service/src/index.ts" },
-    { "src": "/api/profile(.*)", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/payments(/.*)?", "dest": "tec-payment-service/src/index.ts" },
+    { "src": "/api/wallets(/.*)?", "dest": "tec-wallet-service/src/index.ts" },
+    { "src": "/api/auth(/.*)?", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/subscriptions(/.*)?", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/kyc(/.*)?", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/security(/.*)?", "dest": "tec-auth-service/src/index.ts" },
+    { "src": "/api/profile(/.*)?", "dest": "tec-auth-service/src/index.ts" },
     { "src": "/health", "dest": "tec-api-gateway/src/index.ts" },
     { "src": "/(.*)", "dest": "tec-api-gateway/src/index.ts" }
   ]
