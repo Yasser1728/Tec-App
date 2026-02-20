@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic'; // ✅ FIXED
 
 const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Validate paymentId format to prevent path traversal
     const paymentIdRegex = /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$/;
     if (!paymentIdRegex.test(paymentId)) {
       console.error('[Payment Status] Invalid paymentId format:', paymentId);
@@ -31,11 +30,7 @@ export async function GET(request: NextRequest) {
     // Sandbox mode fallback
     if (!PI_API_KEY && PI_SANDBOX) {
       console.log('[Sandbox] Returning mock payment status for:', paymentId);
-      
-      // Check if it's a sandbox payment
       const isSandboxPayment = paymentId.startsWith('sandbox_');
-      
-      // Generate deterministic txid based on paymentId for consistency
       const mockTxid = isSandboxPayment ? `tx_${paymentId.slice(8)}` : undefined;
       
       return NextResponse.json({
@@ -72,7 +67,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get payment status from Pi Platform API
     const response = await fetch(`${PI_API_URL}/v2/payments/${paymentId}`, {
       headers: {
         'Authorization': `Key ${PI_API_KEY}`,
@@ -90,7 +84,6 @@ export async function GET(request: NextRequest) {
 
     const payment = await response.json();
     
-    // Determine payment status
     let status: 'pending' | 'approved' | 'completed' | 'cancelled' | 'failed' = 'pending';
     if (payment.status.cancelled || payment.status.user_cancelled) {
       status = 'cancelled';
