@@ -43,6 +43,7 @@
       },
       "continue": true
     },
+    { "src": "/api/payments/(approve|complete|a2u|incomplete|status)$", "dest": "tec-frontend/$0" },
     { "src": "/api/payments(/.*)?", "dest": "tec-payment-service/src/index.ts" },
     { "src": "/api/wallets(/.*)?", "dest": "tec-wallet-service/src/index.ts" },
     { "src": "/api/auth(/.*)?", "dest": "tec-auth-service/src/index.ts" },
