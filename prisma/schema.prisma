@@ -99,18 +99,20 @@ model Transaction {
 
 // Payment model - Three-stage payment workflow
 model Payment {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   user_id        String
-  amount         Decimal  @db.Decimal(20, 8)
-  currency       String   @default("PI")
-  status         String   @default("created") // created, approved, completed, failed, cancelled
-  payment_method String   // pi, card, wallet
-  pi_payment_id  String?  @unique
+  amount         Decimal   @db.Decimal(20, 8)
+  currency       String    @default("PI")
+  status         String    @default("created") // created, approved, completed, failed, cancelled
+  payment_method String    // pi, card, wallet
+  pi_payment_id  String?   @unique
   metadata       Json?
-  created_at     DateTime @default(now())
+  created_at     DateTime  @default(now())
   approved_at    DateTime?
   completed_at   DateTime?
-  updated_at     DateTime @updatedAt
+  failed_at      DateTime?
+  cancelled_at   DateTime?
+  updated_at     DateTime  @updatedAt
   
   // Relations
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)

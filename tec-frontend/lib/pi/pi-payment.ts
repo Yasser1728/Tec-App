@@ -1,4 +1,12 @@
 import { getAccessToken, waitForPiSDK } from './pi-auth';
+import {
+  APPROVAL_TIMEOUT_MS,
+  COMPLETION_TIMEOUT_MS,
+  RETRIABLE_STATUS_CODES,
+  NON_RETRIABLE_STATUS_CODES,
+  MAX_RETRIES,
+  RETRY_BASE_DELAY_MS,
+} from './payment-timeouts';
 
 export interface A2UPaymentRequest {
   recipientUid: string;
@@ -21,19 +29,34 @@ export interface PaymentResult {
 const retryFetch = async (
   url: string,
   options: RequestInit,
-  maxRetries = 2
+  maxRetries = MAX_RETRIES
 ): Promise<Response> => {
   let lastError: Error | null = null;
   
   for (let i = 0; i <= maxRetries; i++) {
     try {
       const response = await fetch(url, options);
+      
+      // Non-retriable status codes: return immediately without retrying
+      if (NON_RETRIABLE_STATUS_CODES.has(response.status)) {
+        return response;
+      }
+      
+      // Retriable status codes (e.g. 404 = payment not yet indexed, 429 = rate limited)
+      // Retry with exponential back-off unless this is the last attempt
+      if (RETRIABLE_STATUS_CODES.has(response.status) && i < maxRetries) {
+        const delay = RETRY_BASE_DELAY_MS * (i + 1);
+        console.warn(`[Pi Payment] Retriable HTTP ${response.status} on attempt ${i + 1}/${maxRetries + 1}, retrying in ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
       return response;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error('Unknown error');
       if (i < maxRetries) {
         // Wait before retry (exponential backoff: 1s, 2s)
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        await new Promise(resolve => setTimeout(resolve, RETRY_BASE_DELAY_MS * (i + 1)));
       }
     }
   }
@@ -91,13 +114,13 @@ export const createU2APayment = async (
       return;
     }
 
-    // Payment timeout: Separate timeouts for approval and completion stages
-    // Approval: 3 minutes (user needs time to review and approve)
-    // Completion: 3 minutes (backend processing and blockchain confirmation)
-    // Total: 6 minutes (increased from previous 5 minutes single timeout)
-    // This ensures each stage has dedicated time, preventing approval delays from affecting completion
-    const APPROVAL_TIMEOUT_MS = 3 * 60 * 1000;
-    const COMPLETION_TIMEOUT_MS = 3 * 60 * 1000;
+    // Payment timeout: Separate timeouts for approval and completion stages.
+    // Values come from the centralized payment-timeouts.ts configuration.
+    // Approval: configurable via NEXT_PUBLIC_PI_APPROVAL_TIMEOUT (default 3 min)
+    // Completion: configurable via NEXT_PUBLIC_PI_COMPLETION_TIMEOUT (default 3 min)
+    // Total: up to 6 minutes — each stage has dedicated time.
+    const approvalTimeoutMs = APPROVAL_TIMEOUT_MS;
+    const completionTimeoutMs = COMPLETION_TIMEOUT_MS;
     
     let paymentTimedOut = false;
     let paymentTimer: NodeJS.Timeout | null = null;
@@ -107,15 +130,15 @@ export const createU2APayment = async (
       if (paymentTimer) {
         clearTimeout(paymentTimer);
       }
-      console.log(`[Pi Payment] Starting approval timeout: ${APPROVAL_TIMEOUT_MS}ms`);
+      console.log(`[Pi Payment] Starting approval timeout: ${approvalTimeoutMs}ms`);
       paymentTimer = setTimeout(() => {
         paymentTimedOut = true;
-        console.error(`[Pi Payment] Approval stage timed out after ${APPROVAL_TIMEOUT_MS}ms`);
+        console.error(`[Pi Payment] Approval stage timed out after ${approvalTimeoutMs}ms`);
         reject(new Error(
           'انتهت مهلة موافقة الدفع. يرجى المحاولة مرة أخرى.\n' +
           'Payment approval timed out. Please try again.'
         ));
-      }, APPROVAL_TIMEOUT_MS);
+      }, approvalTimeoutMs);
     };
     
     const startCompletionTimer = () => {
@@ -123,15 +146,15 @@ export const createU2APayment = async (
       if (paymentTimer) {
         clearTimeout(paymentTimer);
       }
-      console.log(`[Pi Payment] Starting completion timeout: ${COMPLETION_TIMEOUT_MS}ms`);
+      console.log(`[Pi Payment] Starting completion timeout: ${completionTimeoutMs}ms`);
       paymentTimer = setTimeout(() => {
         paymentTimedOut = true;
-        console.error(`[Pi Payment] Completion stage timed out after ${COMPLETION_TIMEOUT_MS}ms`);
+        console.error(`[Pi Payment] Completion stage timed out after ${completionTimeoutMs}ms`);
         reject(new Error(
           'انتهت مهلة إكمال الدفع. يرجى المحاولة مرة أخرى.\n' +
           'Payment completion timed out. Please try again.'
         ));
-      }, COMPLETION_TIMEOUT_MS);
+      }, completionTimeoutMs);
     };
 
     // Helper to clear timeout

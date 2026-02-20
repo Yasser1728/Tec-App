@@ -371,6 +371,8 @@ export const getPaymentStatus = async (req: Request, res: Response): Promise<voi
         created_at: true,
         approved_at: true,
         completed_at: true,
+        failed_at: true,
+        cancelled_at: true,
         updated_at: true,
       },
     });
@@ -412,6 +414,220 @@ export const getPaymentStatus = async (req: Request, res: Response): Promise<voi
       error: {
         code: 'INTERNAL_ERROR',
         message: 'Failed to get payment status',
+      },
+    });
+  }
+};
+
+// Cancel a payment
+export const cancelPayment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.warn('CancelPayment validation failed:', { errors: errors.array(), body: req.body });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input data. Please check the request parameters.',
+          details: errors.array().map((err: ValidationError) => ({
+            field: 'path' in err ? err.path : 'unknown',
+            message: err.msg,
+            value: 'value' in err ? err.value : undefined,
+          })),
+        },
+      });
+      return;
+    }
+
+    const { payment_id } = req.body;
+    
+    console.log('Cancelling payment:', { payment_id });
+
+    const payment = await prisma.payment.findUnique({
+      where: { id: payment_id },
+    });
+
+    if (!payment) {
+      console.warn('Payment not found:', { payment_id });
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Payment not found',
+        },
+      });
+      return;
+    }
+
+    if (payment.status === 'completed' || payment.status === 'failed' || payment.status === 'cancelled') {
+      console.warn('Payment cannot be cancelled from status:', { payment_id, currentStatus: payment.status });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_STATUS',
+          message: `Payment cannot be cancelled from status: ${payment.status}`,
+        },
+      });
+      return;
+    }
+
+    const updatedPayment = await prisma.payment.update({
+      where: { id: payment_id },
+      data: {
+        status: 'cancelled',
+        cancelled_at: new Date(),
+      },
+    });
+
+    console.log('Payment cancelled successfully:', { paymentId: updatedPayment.id, status: updatedPayment.status });
+
+    res.json({
+      success: true,
+      data: { payment: updatedPayment },
+    });
+  } catch (error) {
+    console.error('CancelPayment error:', error);
+    
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        res.status(410).json({
+          success: false,
+          error: {
+            code: 'PAYMENT_MODIFIED',
+            message: 'Payment was modified or deleted during cancellation',
+          },
+        });
+        return;
+      }
+    }
+    
+    if (error instanceof PrismaClientInitializationError || 
+        error instanceof PrismaClientRustPanicError) {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Database connection failed. Please check DATABASE_URL configuration.',
+        },
+      });
+      return;
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to cancel payment',
+      },
+    });
+  }
+};
+
+// Fail a payment
+export const failPayment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.warn('FailPayment validation failed:', { errors: errors.array(), body: req.body });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input data. Please check the request parameters.',
+          details: errors.array().map((err: ValidationError) => ({
+            field: 'path' in err ? err.path : 'unknown',
+            message: err.msg,
+            value: 'value' in err ? err.value : undefined,
+          })),
+        },
+      });
+      return;
+    }
+
+    const { payment_id, reason } = req.body;
+    
+    console.log('Failing payment:', { payment_id, reason });
+
+    const payment = await prisma.payment.findUnique({
+      where: { id: payment_id },
+    });
+
+    if (!payment) {
+      console.warn('Payment not found:', { payment_id });
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Payment not found',
+        },
+      });
+      return;
+    }
+
+    if (payment.status === 'completed' || payment.status === 'failed' || payment.status === 'cancelled') {
+      console.warn('Payment cannot be failed from status:', { payment_id, currentStatus: payment.status });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_STATUS',
+          message: `Payment cannot be failed from status: ${payment.status}`,
+        },
+      });
+      return;
+    }
+
+    const updatedPayment = await prisma.payment.update({
+      where: { id: payment_id },
+      data: {
+        status: 'failed',
+        failed_at: new Date(),
+        metadata: {
+          ...getMetadataObject(payment.metadata),
+          ...(reason ? { failure_reason: reason } : {}),
+        },
+      },
+    });
+
+    console.log('Payment failed successfully:', { paymentId: updatedPayment.id, status: updatedPayment.status });
+
+    res.json({
+      success: true,
+      data: { payment: updatedPayment },
+    });
+  } catch (error) {
+    console.error('FailPayment error:', error);
+    
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        res.status(410).json({
+          success: false,
+          error: {
+            code: 'PAYMENT_MODIFIED',
+            message: 'Payment was modified or deleted during failure recording',
+          },
+        });
+        return;
+      }
+    }
+    
+    if (error instanceof PrismaClientInitializationError || 
+        error instanceof PrismaClientRustPanicError) {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Database connection failed. Please check DATABASE_URL configuration.',
+        },
+      });
+      return;
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to record payment failure',
       },
     });
   }
