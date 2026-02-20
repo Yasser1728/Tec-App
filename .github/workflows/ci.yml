@@ -152,6 +152,9 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_PI_SDK: ${{ secrets.NEXT_PUBLIC_PI_SDK || 'https://sdk.minepi.com/pi-sdk.js' }}
+          # PI_API_KEY is not required at build time; empty string enables sandbox mode fallback
+          PI_API_KEY: ${{ secrets.PI_API_KEY || '' }}
+          PI_SANDBOX: 'true'
 
   docker-build:
     name: Validate Docker Builds
