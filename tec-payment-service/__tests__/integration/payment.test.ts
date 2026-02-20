@@ -22,6 +22,8 @@ import {
   createPayment,
   approvePayment,
   completePayment,
+  cancelPayment,
+  failPayment,
   getPaymentStatus,
 } from '../../src/controllers/payment.controller';
 
@@ -81,6 +83,30 @@ app.post(
       .trim(),
   ],
   completePayment
+);
+
+app.post(
+  '/payments/cancel',
+  [
+    body('payment_id')
+      .notEmpty().withMessage('payment_id is required')
+      .isUUID().withMessage('payment_id must be a valid UUID'),
+  ],
+  cancelPayment
+);
+
+app.post(
+  '/payments/fail',
+  [
+    body('payment_id')
+      .notEmpty().withMessage('payment_id is required')
+      .isUUID().withMessage('payment_id must be a valid UUID'),
+    body('reason')
+      .optional()
+      .isString().withMessage('reason must be a string')
+      .trim(),
+  ],
+  failPayment
 );
 
 app.get('/payments/:id/status', [
@@ -372,6 +398,246 @@ describe('Payment Service Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
+    });
+  });
+
+  describe('POST /payments/cancel', () => {
+    const validCancelData = {
+      payment_id: '123e4567-e89b-12d3-a456-426614174001',
+    };
+
+    it('should cancel a payment in created status successfully', async () => {
+      const mockPayment = {
+        id: validCancelData.payment_id,
+        user_id: '123e4567-e89b-12d3-a456-426614174000',
+        amount: 10.5,
+        currency: 'PI',
+        status: 'created',
+        payment_method: 'pi',
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      const mockUpdatedPayment = {
+        ...mockPayment,
+        status: 'cancelled',
+        cancelled_at: new Date(),
+      };
+
+      mockPrismaClient.payment.findUnique.mockResolvedValue(mockPayment);
+      mockPrismaClient.payment.update.mockResolvedValue(mockUpdatedPayment);
+
+      const response = await request(app)
+        .post('/payments/cancel')
+        .send(validCancelData);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.payment.status).toBe('cancelled');
+    });
+
+    it('should cancel a payment in approved status successfully', async () => {
+      const mockPayment = {
+        id: validCancelData.payment_id,
+        status: 'approved',
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      const mockUpdatedPayment = {
+        ...mockPayment,
+        status: 'cancelled',
+        cancelled_at: new Date(),
+      };
+
+      mockPrismaClient.payment.findUnique.mockResolvedValue(mockPayment);
+      mockPrismaClient.payment.update.mockResolvedValue(mockUpdatedPayment);
+
+      const response = await request(app)
+        .post('/payments/cancel')
+        .send(validCancelData);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.payment.status).toBe('cancelled');
+    });
+
+    it('should return 404 if payment not found', async () => {
+      mockPrismaClient.payment.findUnique.mockResolvedValue(null);
+
+      const response = await request(app)
+        .post('/payments/cancel')
+        .send(validCancelData);
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('should return 400 if payment is already completed', async () => {
+      const mockPayment = {
+        id: validCancelData.payment_id,
+        status: 'completed',
+      };
+
+      mockPrismaClient.payment.findUnique.mockResolvedValue(mockPayment);
+
+      const response = await request(app)
+        .post('/payments/cancel')
+        .send(validCancelData);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_STATUS');
+    });
+
+    it('should return 400 if payment is already cancelled', async () => {
+      const mockPayment = {
+        id: validCancelData.payment_id,
+        status: 'cancelled',
+      };
+
+      mockPrismaClient.payment.findUnique.mockResolvedValue(mockPayment);
+
+      const response = await request(app)
+        .post('/payments/cancel')
+        .send(validCancelData);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_STATUS');
+    });
+
+    it('should return 400 for invalid payment_id format', async () => {
+      const response = await request(app)
+        .post('/payments/cancel')
+        .send({ payment_id: 'not-a-uuid' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  describe('POST /payments/fail', () => {
+    const validFailData = {
+      payment_id: '123e4567-e89b-12d3-a456-426614174001',
+      reason: 'Payment declined by Pi Network',
+    };
+
+    it('should record payment failure successfully', async () => {
+      const mockPayment = {
+        id: validFailData.payment_id,
+        user_id: '123e4567-e89b-12d3-a456-426614174000',
+        amount: 10.5,
+        currency: 'PI',
+        status: 'approved',
+        payment_method: 'pi',
+        metadata: {},
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      const mockUpdatedPayment = {
+        ...mockPayment,
+        status: 'failed',
+        failed_at: new Date(),
+        metadata: { failure_reason: validFailData.reason },
+      };
+
+      mockPrismaClient.payment.findUnique.mockResolvedValue(mockPayment);
+      mockPrismaClient.payment.update.mockResolvedValue(mockUpdatedPayment);
+
+      const response = await request(app)
+        .post('/payments/fail')
+        .send(validFailData);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.payment.status).toBe('failed');
+    });
+
+    it('should record failure without reason', async () => {
+      const mockPayment = {
+        id: validFailData.payment_id,
+        status: 'created',
+        metadata: {},
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      const mockUpdatedPayment = {
+        ...mockPayment,
+        status: 'failed',
+        failed_at: new Date(),
+      };
+
+      mockPrismaClient.payment.findUnique.mockResolvedValue(mockPayment);
+      mockPrismaClient.payment.update.mockResolvedValue(mockUpdatedPayment);
+
+      const response = await request(app)
+        .post('/payments/fail')
+        .send({ payment_id: validFailData.payment_id });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.payment.status).toBe('failed');
+    });
+
+    it('should return 404 if payment not found', async () => {
+      mockPrismaClient.payment.findUnique.mockResolvedValue(null);
+
+      const response = await request(app)
+        .post('/payments/fail')
+        .send(validFailData);
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('should return 400 if payment is already failed', async () => {
+      const mockPayment = {
+        id: validFailData.payment_id,
+        status: 'failed',
+      };
+
+      mockPrismaClient.payment.findUnique.mockResolvedValue(mockPayment);
+
+      const response = await request(app)
+        .post('/payments/fail')
+        .send(validFailData);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_STATUS');
+    });
+
+    it('should return 400 if payment is already completed', async () => {
+      const mockPayment = {
+        id: validFailData.payment_id,
+        status: 'completed',
+      };
+
+      mockPrismaClient.payment.findUnique.mockResolvedValue(mockPayment);
+
+      const response = await request(app)
+        .post('/payments/fail')
+        .send(validFailData);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_STATUS');
+    });
+
+    it('should return 400 for invalid payment_id format', async () => {
+      const response = await request(app)
+        .post('/payments/fail')
+        .send({ payment_id: 'not-a-uuid' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
   });
 });

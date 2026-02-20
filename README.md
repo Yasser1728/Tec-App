@@ -60,17 +60,25 @@ export POSTGRES_PASSWORD="your_secure_password"
 export JWT_SECRET="your_jwt_secret_key_min_32_chars"
 export JWT_REFRESH_SECRET="your_refresh_secret_key_min_32_chars"
 
-# Optional configurations
+# Pi Network integration (required for payment processing)
+export PI_API_KEY="your_pi_network_api_key"      # from https://developers.minepi.com
+export PI_APP_ID="your_pi_app_id"                # from https://developers.minepi.com
+
+# Environment (sandbox = testnet, production = mainnet)
+export PI_SANDBOX="true"                         # 'false' for Mainnet/Production
+export NEXT_PUBLIC_PI_SANDBOX="true"             # frontend counterpart
+
+# Optional
 export NODE_ENV="production"
 export CORS_ORIGIN="http://localhost:3000"
-export PI_API_KEY="your_pi_network_api_key"
 ```
 
 > **⚠️ Important for Payment Service:**
 > - **`DATABASE_URL`**: Required for payment processing. Automatically set by docker-compose from `POSTGRES_PASSWORD`.
 > - **`CORS_ORIGIN`**: Must match your frontend URL. Use `http://localhost:3000` for local development and your production URL (e.g., `https://tec-app.vercel.app`) in production.
-> - **`PI_API_KEY`**: Required for Pi Network payment integration. Obtain from [Pi Developer Portal](https://developers.minepi.com/).
-> 
+> - **`PI_API_KEY`** and **`PI_APP_ID`**: Required for Pi Network payment integration. Obtain both from [Pi Developer Portal](https://developers.minepi.com/).
+> - **`PI_SANDBOX`** / **`NEXT_PUBLIC_PI_SANDBOX`**: Set to `'true'` for Testnet (sandbox) and `'false'` for Mainnet (production).
+>
 > If the payment service fails to start or returns database errors, verify these environment variables are correctly set.
 
 3. **Start the platform:**
@@ -115,11 +123,13 @@ docker-compose up -d
 | POST | `/api/payments/create` | Create payment |
 | POST | `/api/payments/approve` | Approve payment |
 | POST | `/api/payments/complete` | Complete payment |
+| POST | `/api/payments/cancel` | Cancel payment |
+| POST | `/api/payments/fail` | Record payment failure |
 | GET | `/api/payments/{id}/status` | Get payment status |
 
 #### Payment Workflow
 
-The payment service implements a three-stage payment workflow:
+The payment service implements a five-state payment lifecycle:
 
 1. **Create** (`POST /api/payments/create`): Initiates a payment with user ID, amount, and payment method.
    - Required fields: `userId` (UUID), `amount` (> 0), `payment_method` (pi/card/wallet)
@@ -133,6 +143,15 @@ The payment service implements a three-stage payment workflow:
    - Required: `payment_id` (UUID)
    - Optional: `transaction_id` (blockchain transaction ID)
 
+4. **Cancel** (`POST /api/payments/cancel`): Cancels a payment that is in `created` or `approved` state.
+   - Required: `payment_id` (UUID)
+   - Records `cancelled_at` timestamp in the database.
+
+5. **Fail** (`POST /api/payments/fail`): Records a payment failure for a `created` or `approved` payment.
+   - Required: `payment_id` (UUID)
+   - Optional: `reason` (failure description, stored in metadata)
+   - Records `failed_at` timestamp in the database.
+
 #### Error Codes
 
 The payment service returns specific error codes for better debugging:
@@ -143,6 +162,7 @@ The payment service returns specific error codes for better debugging:
 - `DATABASE_UNAVAILABLE`: Database connection failed (check `DATABASE_URL`)
 - `DUPLICATE_PAYMENT`: Payment already exists
 - `DUPLICATE_PI_PAYMENT`: Pi payment ID already in use
+- `PAYMENT_MODIFIED`: Payment was modified or deleted concurrently
 
 ## 🛠️ Tech Stack
 
@@ -279,12 +299,21 @@ docker-compose up -d
 - `JWT_SECRET` - JWT access token secret (min 32 chars)
 - `JWT_REFRESH_SECRET` - JWT refresh token secret (min 32 chars)
 
+### Pi Network (Required for Payment Integration)
+- `PI_API_KEY` - Pi Network server-side API key (from [developers.minepi.com](https://developers.minepi.com))
+- `PI_APP_ID` - Pi App identifier (from [developers.minepi.com](https://developers.minepi.com))
+- `PI_SANDBOX` - `'true'` for Testnet (sandbox), `'false'` for Mainnet (production)
+- `NEXT_PUBLIC_PI_SANDBOX` - Frontend counterpart; `'true'` for Testnet
+
 ### Optional
 - `NODE_ENV` - Environment (development/production)
 - `CORS_ORIGIN` - Allowed CORS origins
-- `PI_API_KEY` - Pi Network API key
 - `RATE_LIMIT_WINDOW_MS` - Rate limit window (default: 900000)
 - `RATE_LIMIT_MAX_REQUESTS` - Max requests per window (default: 100)
+- `NEXT_PUBLIC_PI_SDK_TIMEOUT` - Pi SDK load timeout in ms (default: 25000)
+- `NEXT_PUBLIC_PI_AUTH_TIMEOUT` - Pi auth timeout in ms (default: 45000)
+- `NEXT_PUBLIC_PI_APPROVAL_TIMEOUT` - Payment approval stage timeout in ms (default: 180000)
+- `NEXT_PUBLIC_PI_COMPLETION_TIMEOUT` - Payment completion stage timeout in ms (default: 180000)
 
 ## 🌍 The 24 Apps
 

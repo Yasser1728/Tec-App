@@ -4,6 +4,8 @@ import {
   createPayment,
   approvePayment,
   completePayment,
+  cancelPayment,
+  failPayment,
   getPaymentStatus,
 } from '../controllers/payment.controller';
 
@@ -63,6 +65,32 @@ router.post(
       .trim(),
   ],
   completePayment
+);
+
+// POST /payments/cancel - Cancel a payment
+router.post(
+  '/cancel',
+  [
+    body('payment_id')
+      .notEmpty().withMessage('payment_id is required')
+      .isUUID().withMessage('payment_id must be a valid UUID'),
+  ],
+  cancelPayment
+);
+
+// POST /payments/fail - Record a payment failure
+router.post(
+  '/fail',
+  [
+    body('payment_id')
+      .notEmpty().withMessage('payment_id is required')
+      .isUUID().withMessage('payment_id must be a valid UUID'),
+    body('reason')
+      .optional()
+      .isString().withMessage('reason must be a string')
+      .trim(),
+  ],
+  failPayment
 );
 
 // GET /payments/:id/status - Get payment status
