@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
@@ -11,43 +11,23 @@ export async function POST(request: NextRequest) {
     const { recipientUid, amount, memo, metadata } = await request.json();
 
     if (!recipientUid || !amount || !memo) {
-      return NextResponse.json(
-        { success: false, message: 'recipientUid, amount, and memo are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'recipientUid, amount, and memo are required' }, { status: 400 });
     }
 
-    // Validate recipientUid format
     const uidRegex = /^[a-zA-Z0-9_-]+$/;
     if (typeof recipientUid !== 'string' || !uidRegex.test(recipientUid)) {
-      console.error('[Payment A2U] Invalid recipientUid format:', recipientUid);
-      return NextResponse.json(
-        { success: false, message: 'Invalid recipientUid format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Invalid recipientUid format' }, { status: 400 });
     }
 
-    // Validate amount is a positive number
     if (typeof amount !== 'number' || amount <= 0 || !isFinite(amount)) {
-      console.error('[Payment A2U] Invalid amount:', amount);
-      return NextResponse.json(
-        { success: false, message: 'Amount must be a positive number' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Amount must be a positive number' }, { status: 400 });
     }
 
-    // Validate memo length
     if (typeof memo !== 'string' || memo.length === 0 || memo.length > 500) {
-      console.error('[Payment A2U] Invalid memo:', memo);
-      return NextResponse.json(
-        { success: false, message: 'Memo must be between 1 and 500 characters' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Memo must be between 1 and 500 characters' }, { status: 400 });
     }
 
-    // Sandbox mode fallback
     if (!PI_API_KEY && PI_SANDBOX) {
-      console.log('[Sandbox] Simulating A2U payment creation for:', recipientUid, amount, memo);
       const mockPaymentId = `sandbox_a2u_${Date.now()}`;
       return NextResponse.json({
         success: true,
@@ -73,14 +53,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!PI_API_KEY) {
-      console.error('PI_API_KEY is not set');
-      return NextResponse.json(
-        { success: false, message: 'Server configuration error' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 });
     }
 
-    // Create A2U payment via Pi Platform API
     const response = await fetch(`${PI_API_URL}/v2/payments`, {
       method: 'POST',
       headers: {
@@ -88,49 +63,25 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        payment: {
-          amount,
-          memo,
-          metadata: metadata || {},
-          uid: recipientUid,
-        },
+        payment: { amount, memo, metadata: metadata || {}, uid: recipientUid },
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Pi API A2U error:', response.status, errorText);
-      return NextResponse.json(
-        { success: false, message: 'Failed to create A2U payment' },
-        { status: response.status }
-      );
+      return NextResponse.json({ success: false, message: 'Failed to create A2U payment' }, { status: response.status });
     }
 
     const data = await response.json();
-    
-    // Validate response structure
+
     if (!data.identifier) {
-      console.error('Pi API response missing identifier:', data);
-      return NextResponse.json(
-        { success: false, message: 'Invalid response from Pi API: missing payment identifier' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, message: 'Invalid response from Pi API' }, { status: 500 });
     }
-    
-    return NextResponse.json({
-      success: true,
-      paymentId: data.identifier,
-      status: 'pending',
-      amount,
-      memo,
-      data,
-    });
+
+    return NextResponse.json({ success: true, paymentId: data.identifier, status: 'pending', amount, memo, data });
   } catch (error: unknown) {
-    console.error('A2U Payment error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { success: false, message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
