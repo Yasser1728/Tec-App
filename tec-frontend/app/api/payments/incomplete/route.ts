@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic'; // ✅ FIXED
 
 const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
 const PI_SANDBOX = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false' && process.env.PI_SANDBOX !== 'false';
 
-// Log configuration at startup
 console.log('[Payment Incomplete] Configuration:', {
   PI_API_KEY_SET: !!PI_API_KEY,
   PI_SANDBOX,
   PI_API_URL,
 });
 
-// Warn if PI_API_KEY is missing in production
 if (!PI_API_KEY && !PI_SANDBOX) {
   console.warn('[Payment Incomplete] WARNING: PI_API_KEY is not set in production mode! Incomplete payment recovery will fail.');
 }
@@ -30,7 +28,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate paymentId format to prevent path traversal
     const paymentIdRegex = /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$/;
     if (!paymentIdRegex.test(paymentId)) {
       console.error('[Payment Incomplete] Invalid paymentId format:', paymentId);
@@ -42,7 +39,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[Payment Incomplete] Processing incomplete payment:', paymentId);
 
-    // Sandbox mode fallback
     if (!PI_API_KEY && PI_SANDBOX) {
       console.log('[Payment Incomplete] Sandbox mode: No action needed for:', paymentId);
       return NextResponse.json({ 
@@ -61,7 +57,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the payment details
     console.log('[Payment Incomplete] Fetching payment details for:', paymentId);
     const response = await fetch(`${PI_API_URL}/v2/payments/${paymentId}`, {
       headers: {
@@ -90,7 +85,6 @@ export async function POST(request: NextRequest) {
       has_txid: !!payment.transaction?.txid,
     });
 
-    // If the payment has a txid but isn't completed, complete it
     if (payment.transaction && payment.transaction.txid && !payment.status.developer_completed) {
       console.log('[Payment Incomplete] Attempting to complete payment:', paymentId);
       const completeResponse = await fetch(`${PI_API_URL}/v2/payments/${paymentId}/complete`, {
@@ -119,7 +113,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If payment is not approved yet, approve it
     if (!payment.status.developer_approved) {
       console.log('[Payment Incomplete] Attempting to approve payment:', paymentId);
       const approveResponse = await fetch(`${PI_API_URL}/v2/payments/${paymentId}/approve`, {
