@@ -34,9 +34,9 @@ COPY tec-wallet-service/package*.json ./
 # Install only production dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy Prisma schema and generate client
+# Copy Prisma schema and generated client from builder (avoids npx version mismatch)
 COPY ./prisma ./prisma
-RUN npx prisma generate
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
