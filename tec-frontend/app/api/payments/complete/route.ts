@@ -4,6 +4,13 @@ const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
 const PI_SANDBOX = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false' && process.env.PI_SANDBOX !== 'false';
 
+// Complete timeout: configurable via PI_API_COMPLETE_TIMEOUT (default 30 seconds)
+const parseTimeout = (envVar: string | undefined, defaultMs: number): number => {
+  const parsed = envVar ? parseInt(envVar, 10) : NaN;
+  return (!isNaN(parsed) && parsed > 0) ? parsed : defaultMs;
+};
+const COMPLETE_TIMEOUT_MS = parseTimeout(process.env.PI_API_COMPLETE_TIMEOUT, 30000);
+
 // Log configuration at startup
 console.log('[Payment Complete] Configuration:', {
   PI_API_KEY_SET: !!PI_API_KEY,
@@ -99,14 +106,30 @@ export async function POST(request: NextRequest) {
 
     // Complete the payment with Pi Platform API
     console.log('[Payment Complete] Calling Pi API for:', paymentId, txid);
-    const response = await fetch(`${PI_API_URL}/v2/payments/${paymentId}/complete`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${PI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ txid }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), COMPLETE_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetch(`${PI_API_URL}/v2/payments/${paymentId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Key ${PI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ txid }),
+        signal: controller.signal,
+      });
+    } catch (fetchErr: unknown) {
+      clearTimeout(timeoutId);
+      const isAbort = fetchErr instanceof Error && fetchErr.name === 'AbortError';
+      const message = isAbort
+        ? `Pi API complete request timed out after ${COMPLETE_TIMEOUT_MS}ms`
+        : (fetchErr instanceof Error ? fetchErr.message : 'Internal server error');
+      console.error('[Payment Complete] Fetch error:', { paymentId, txid, message });
+      return NextResponse.json({ success: false, message }, { status: isAbort ? 504 : 500 });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
