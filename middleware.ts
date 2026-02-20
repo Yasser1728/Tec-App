@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-export function middleware(req: any) {
-
+export function middleware(req: NextRequest) {
   const isLoggedIn = req.cookies.get("user");
 
   if (!isLoggedIn) {
@@ -10,3 +10,7 @@ export function middleware(req: any) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: ['/dashboard/:path*'],
+};

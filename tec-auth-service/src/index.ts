@@ -26,8 +26,12 @@ const serviceStartTime = Date.now();
 
 // Security middleware
 app.use(helmet());
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+if (corsOrigin === '*' && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️  WARNING: CORS_ORIGIN is set to wildcard "*" in production. Set CORS_ORIGIN to your frontend URL.');
+}
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: corsOrigin,
   credentials: true,
 }));
 

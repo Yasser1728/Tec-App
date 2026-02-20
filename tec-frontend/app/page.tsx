@@ -6,6 +6,7 @@ import { usePiAuth } from '@/hooks/usePiAuth';
 import { usePiPayment } from '@/hooks/usePiPayment';
 import { useDiagnostics } from '@/hooks/useDiagnostics';
 import { useTranslation } from '@/lib/i18n';
+import { isPiBrowser } from '@/lib/pi/pi-auth';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import styles from './page.module.css';
 
@@ -27,10 +28,17 @@ export default function HomePage() {
   const router = useRouter();
   const [paymentState, setPaymentState] = useState<PaymentState>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [sdkTestResult, setSdkTestResult] = useState<'pass' | 'fail' | null>(null);
+  const [isInPiBrowser, setIsInPiBrowser] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) router.push('/dashboard');
   }, [isAuthenticated, router]);
+
+  // Detect Pi Browser on mount (client-side only)
+  useEffect(() => {
+    setIsInPiBrowser(isPiBrowser());
+  }, []);
 
   useEffect(() => {
     // Add SDK initialization event on mount
@@ -75,8 +83,10 @@ export default function HomePage() {
     if (available) {
       console.log('✅ Pi SDK Test: PASSED');
       console.log('🌐 Testnet Mode: Demo payments enabled');
+      setSdkTestResult('pass');
     } else {
       console.log('❌ Pi SDK Test: FAILED - SDK not available');
+      setSdkTestResult('fail');
     }
   };
 
@@ -190,6 +200,21 @@ export default function HomePage() {
       </div>
 
       <section className={styles.hero}>
+        {/* Pi Browser warning banner – shown only when NOT in Pi Browser (after detection) */}
+        {isInPiBrowser === false && (
+          <div className={styles.warningBanner}>
+            <span className={styles.warningBannerIcon}>⚠️</span>
+            <div>
+              <div className={styles.warningBannerTitle}>أنت لست داخل متصفح Pi Network / You are not in Pi Browser</div>
+              <div className={styles.warningBannerText}>
+                لن تعمل المصادقة والمدفوعات خارج Pi Browser. افتح تطبيق Pi Network → التطبيقات → TEC App
+                <br />
+                Authentication and payments only work inside Pi Browser. Open Pi Network app → Apps → TEC App
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className={`${styles.badge} fade-up`}>
           <span className={styles.badgeDot} />
           {t.common.piEcosystem}
@@ -232,16 +257,17 @@ export default function HomePage() {
               className={styles.btnTest} 
               onClick={handleTestSdk}
             >
-              🖊️ Test Pi SDK (Check Console)
+              🖊️ Test Pi SDK
             </button>
 
             <button 
               className={styles.btnPay} 
               onClick={handlePayDemo}
               disabled={!isAuthenticated || isProcessing || paymentState === 'processing'}
+              aria-label={!isAuthenticated ? 'يجب تسجيل الدخول عبر Pi Browser أولاً / Login via Pi Browser first' : undefined}
             >
               {!isAuthenticated ? (
-                <span>🔒 Login first</span>
+                <span>🔒 سجّل الدخول أولاً / Login first</span>
               ) : isProcessing || paymentState === 'processing' ? (
                 <span>⏳ Processing...</span>
               ) : (
@@ -249,6 +275,18 @@ export default function HomePage() {
               )}
             </button>
           </div>
+
+          {/* SDK test result banner */}
+          {sdkTestResult === 'pass' && (
+            <div className={styles.sdkTestResult} data-result="pass">
+              ✅ Pi SDK متاح / Pi SDK available — Testnet mode active
+            </div>
+          )}
+          {sdkTestResult === 'fail' && (
+            <div className={styles.sdkTestResult} data-result="fail">
+              ❌ Pi SDK غير متاح / Pi SDK not available — افتح التطبيق داخل Pi Browser / Open inside Pi Browser
+            </div>
+          )}
 
           {/* Payment Status Messages */}
           {paymentState === 'success' && lastPayment && (
