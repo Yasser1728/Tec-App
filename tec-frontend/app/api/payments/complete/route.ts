@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-static';
+
 const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
 const PI_SANDBOX = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false' && process.env.PI_SANDBOX !== 'false';
