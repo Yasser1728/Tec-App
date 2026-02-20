@@ -7,14 +7,13 @@ import { usePiPayment } from '@/hooks/usePiPayment';
 import { useDiagnostics } from '@/hooks/useDiagnostics';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import PaymentDiagnostics from '@/components/PaymentDiagnostics';
 import styles from './page.module.css';
 
 type PaymentState = 'idle' | 'processing' | 'success' | 'error' | 'cancelled';
 
 export default function HomePage() {
   const { isAuthenticated, isLoading, error, login, user } = usePiAuth();
-  const { events, addEvent } = useDiagnostics();
+  const { addEvent } = useDiagnostics();
   
   // Memoize the diagnostic callback to prevent unnecessary re-renders
   const diagnosticCallback = useCallback((type: string, message: string, data?: unknown) => {
@@ -301,12 +300,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Payment Diagnostics - Only visible in Testnet */}
-          <PaymentDiagnostics 
-            isAuthenticated={isAuthenticated}
-            username={user?.piUsername}
-            events={events}
-          />
+
         </div>
 
         <div className={`${styles.stats} fade-up-4`}>

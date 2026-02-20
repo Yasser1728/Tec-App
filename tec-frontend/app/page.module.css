@@ -24,53 +24,55 @@
 }
 
 .btnTest {
-  padding: 14px 28px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 700;
+  padding: 13px 28px;
+  border: 1px solid rgba(0, 212, 170, 0.35);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #00d4aa, #00ffcc);
-  color: #fff;
-  min-width: 200px;
+  background: rgba(0, 212, 170, 0.12);
+  color: #00d4aa;
+  min-width: 210px;
 }
 
 .btnTest:hover {
-  background: linear-gradient(135deg, #00e6b8, #00ffdd);
+  background: rgba(0, 212, 170, 0.22);
+  box-shadow: 0 6px 20px rgba(0, 212, 170, 0.25);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
 }
 
 .btnPay {
-  padding: 14px 28px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 700;
+  padding: 13px 28px;
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #ff1493, #ff69b4);
-  color: #fff;
-  min-width: 200px;
+  background: rgba(201, 168, 76, 0.12);
+  color: var(--gold);
+  min-width: 210px;
 }
 
 .btnPay:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ff3da8, #ff7fc4);
+  background: rgba(201, 168, 76, 0.22);
+  box-shadow: 0 6px 20px rgba(201, 168, 76, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(255, 20, 147, 0.5);
 }
 
 .btnPay:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
