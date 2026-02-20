@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic'; // ✅ FIXED
+export const dynamic = 'force-dynamic';
 
 const PI_API_URL = 'https://api.minepi.com';
 const PI_API_KEY = process.env.PI_API_KEY || '';
@@ -10,29 +10,19 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const paymentId = searchParams.get('paymentId');
-    
+
     if (!paymentId) {
-      return NextResponse.json(
-        { success: false, message: 'paymentId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'paymentId is required' }, { status: 400 });
     }
 
     const paymentIdRegex = /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$/;
     if (!paymentIdRegex.test(paymentId)) {
-      console.error('[Payment Status] Invalid paymentId format:', paymentId);
-      return NextResponse.json(
-        { success: false, message: 'Invalid paymentId format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Invalid paymentId format' }, { status: 400 });
     }
 
-    // Sandbox mode fallback
     if (!PI_API_KEY && PI_SANDBOX) {
-      console.log('[Sandbox] Returning mock payment status for:', paymentId);
       const isSandboxPayment = paymentId.startsWith('sandbox_');
       const mockTxid = isSandboxPayment ? `tx_${paymentId.slice(8)}` : undefined;
-      
       return NextResponse.json({
         success: true,
         paymentId,
@@ -51,39 +41,27 @@ export async function GET(request: NextRequest) {
             cancelled: false,
             user_cancelled: false,
           },
-          transaction: isSandboxPayment ? {
-            txid: mockTxid,
-            verified: true,
-          } : null,
+          transaction: isSandboxPayment ? { txid: mockTxid, verified: true } : null,
         }
       });
     }
 
     if (!PI_API_KEY) {
-      console.error('PI_API_KEY is not set');
-      return NextResponse.json(
-        { success: false, message: 'Server configuration error' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 });
     }
 
     const response = await fetch(`${PI_API_URL}/v2/payments/${paymentId}`, {
-      headers: {
-        'Authorization': `Key ${PI_API_KEY}`,
-      },
+      headers: { 'Authorization': `Key ${PI_API_KEY}` },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Pi API status error:', errorText);
-      return NextResponse.json(
-        { success: false, message: 'Failed to fetch payment status' },
-        { status: response.status }
-      );
+      return NextResponse.json({ success: false, message: 'Failed to fetch payment status' }, { status: response.status });
     }
 
     const payment = await response.json();
-    
+
     let status: 'pending' | 'approved' | 'completed' | 'cancelled' | 'failed' = 'pending';
     if (payment.status.cancelled || payment.status.user_cancelled) {
       status = 'cancelled';
@@ -92,7 +70,7 @@ export async function GET(request: NextRequest) {
     } else if (payment.status.developer_approved) {
       status = 'approved';
     }
-    
+
     return NextResponse.json({
       success: true,
       paymentId: payment.identifier,
@@ -103,11 +81,7 @@ export async function GET(request: NextRequest) {
       data: payment,
     });
   } catch (error: unknown) {
-    console.error('Payment status error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { success: false, message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
