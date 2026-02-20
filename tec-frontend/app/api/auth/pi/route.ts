@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PI_API_URL = 'https://api.minepi.com';
+const isSandbox = process.env.PI_SANDBOX === 'true';
+
+const PI_API_URL = isSandbox
+  ? 'https://api.sandbox.minepi.com'
+  : 'https://api.minepi.com';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +17,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify token with Pi API
     const verifyResponse = await fetch(`${PI_API_URL}/v2/me`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -21,6 +24,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!verifyResponse.ok) {
+      const text = await verifyResponse.text();
+      console.error("Pi verify failed:", text);
+
       return NextResponse.json(
         { error: 'Invalid Pi token' },
         { status: 401 }
@@ -29,10 +35,8 @@ export async function POST(request: NextRequest) {
 
     const user = await verifyResponse.json();
 
-    // IMPORTANT:
-    // Return accessToken exactly as Pi SDK expects
     return NextResponse.json({
-      accessToken, // 👈 ده أهم سطر
+      accessToken,
       user: {
         uid: user.uid,
         username: user.username,
@@ -40,6 +44,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error("Auth error:", error);
     return NextResponse.json(
       { error: 'Auth failed' },
       { status: 500 }
