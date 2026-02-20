@@ -25,14 +25,18 @@ if (missingEnvVars.length > 0) {
 console.log('🔧 Payment Service Configuration:');
 console.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
 console.log(`  - PORT: ${PORT}`);
-console.log(`  - CORS_ORIGIN: ${process.env.CORS_ORIGIN || '*'}`);
+console.log(`  - CORS_ORIGIN: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
 console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✓ Set' : '✗ Not set'}`);
 console.log(`  - PI_API_KEY: ${process.env.PI_API_KEY ? '✓ Set' : '✗ Not set (optional)'}`);
 
 // Security middleware
 app.use(helmet());
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+if (corsOrigin === '*' && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️  WARNING: CORS_ORIGIN is set to wildcard "*" in production. Set CORS_ORIGIN to your frontend URL.');
+}
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: corsOrigin,
   credentials: true,
 }));
 

@@ -21,7 +21,14 @@ declare global {
 
 export const isPiBrowser = (): boolean => {
   if (typeof window === 'undefined') return false;
-  return typeof window.Pi !== 'undefined';
+  if (typeof window.Pi === 'undefined') return false;
+  // Check User-Agent for Pi Browser signature (case-insensitive)
+  const ua = (navigator.userAgent || '').toLowerCase();
+  if (ua.includes('pibrowser') || ua.includes('pi network')) return true;
+  // Fall back to checking whether the SDK was initialised by Pi Browser
+  // (window.__TEC_PI_READY is only set after a successful Pi.init(), which
+  // only works inside the real Pi Browser)
+  return !!window.__TEC_PI_READY;
 };
 
 // Handle incomplete payments from previous sessions
@@ -145,10 +152,26 @@ const authenticateWithTimeout = async (timeout?: number): Promise<PiAuthResult> 
     const timer = setTimeout(() => {
       const elapsed = Date.now() - startTime;
       console.error(`[TEC Pi Auth] Authentication timed out after ${elapsed}ms (timeout: ${effectiveTimeout}ms)`);
-      reject(new Error(
-        'انتهت مهلة المصادقة. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
-        'Authentication timed out. Please check your internet connection and try again.'
-      ));
+      // Provide a specific message depending on the actual failure point
+      const sdkReady = typeof window !== 'undefined' && !!window.__TEC_PI_READY;
+      const inPiBrowser = isPiBrowser();
+      let message: string;
+      if (!inPiBrowser) {
+        message =
+          'يرجى فتح التطبيق داخل متصفح Pi Network للمصادقة.\n' +
+          'Please open the app inside Pi Browser to authenticate.\n\n' +
+          'تعليمات: افتح تطبيق Pi Network → التطبيقات → TEC App\n' +
+          'Instructions: Open Pi Network app → Apps → TEC App';
+      } else if (!sdkReady) {
+        message =
+          'تعذر تهيئة Pi SDK. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
+          'Pi SDK failed to initialize. Please check your internet connection and try again.';
+      } else {
+        message =
+          'انتهت مهلة المصادقة. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
+          'Authentication timed out. Please check your internet connection and try again.';
+      }
+      reject(new Error(message));
     }, effectiveTimeout);
 
     console.log('[TEC Pi Auth] Calling window.Pi.authenticate()...');
