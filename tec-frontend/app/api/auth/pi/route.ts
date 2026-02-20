@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-static';
+
 const isSandbox = process.env.PI_SANDBOX === 'true';
 
 const PI_API_URL = isSandbox
