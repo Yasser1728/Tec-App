@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PI_API_URL = 'https://api.minepi.com';
-const PI_API_KEY = process.env.PI_API_KEY || '';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,29 +8,31 @@ export async function POST(request: NextRequest) {
 
     if (!accessToken) {
       return NextResponse.json(
-        { success: false, message: 'accessToken is required' },
+        { error: 'accessToken is required' },
         { status: 400 }
       );
     }
 
     // Verify token with Pi API
-    const response = await fetch(`${PI_API_URL}/v2/me`, {
+    const verifyResponse = await fetch(`${PI_API_URL}/v2/me`, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
-    if (!response.ok) {
+    if (!verifyResponse.ok) {
       return NextResponse.json(
-        { success: false, message: 'Invalid Pi token' },
+        { error: 'Invalid Pi token' },
         { status: 401 }
       );
     }
 
-    const user = await response.json();
+    const user = await verifyResponse.json();
 
+    // IMPORTANT:
+    // Return accessToken exactly as Pi SDK expects
     return NextResponse.json({
-      success: true,
+      accessToken, // 👈 ده أهم سطر
       user: {
         uid: user.uid,
         username: user.username,
@@ -39,9 +40,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Auth error';
     return NextResponse.json(
-      { success: false, message },
+      { error: 'Auth failed' },
       { status: 500 }
     );
   }
