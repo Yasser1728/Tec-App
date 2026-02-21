@@ -21,14 +21,9 @@ declare global {
 
 export const isPiBrowser = (): boolean => {
   if (typeof window === 'undefined') return false;
-  if (typeof window.Pi === 'undefined') return false;
-  // Check User-Agent for Pi Browser signature (case-insensitive)
-  const ua = (navigator.userAgent || '').toLowerCase();
-  if (ua.includes('pibrowser') || ua.includes('pi network')) return true;
-  // Fall back to checking whether the SDK was initialised by Pi Browser
-  // (window.__TEC_PI_READY is only set after a successful Pi.init(), which
-  // only works inside the real Pi Browser)
-  return !!window.__TEC_PI_READY;
+  // If window.Pi exists with authenticate method, we're in Pi Browser.
+  // The Pi SDK only provides a functional Pi object inside Pi Browser.
+  return typeof window.Pi !== 'undefined' && typeof window.Pi.authenticate === 'function';
 };
 
 // Handle incomplete payments from previous sessions
