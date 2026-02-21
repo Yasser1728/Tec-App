@@ -6,14 +6,16 @@ import { usePiAuth } from '@/hooks/usePiAuth';
 import { usePiPayment } from '@/hooks/usePiPayment';
 import { useDiagnostics } from '@/hooks/useDiagnostics';
 import { useTranslation } from '@/lib/i18n';
-import { isPiBrowser } from '@/lib/pi/pi-auth';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import styles from './page.module.css';
 
 type PaymentState = 'idle' | 'processing' | 'success' | 'error' | 'cancelled';
 
+/** How long to wait for SDK init signals before marking SDK as unavailable (ms) */
+const SDK_DETECTION_TIMEOUT_MS = 5000;
+
 export default function HomePage() {
-  const { isAuthenticated, isLoading, error, login, user } = usePiAuth();
+  const { isAuthenticated, isLoading, error, login } = usePiAuth();
   const { addEvent } = useDiagnostics();
   
   // Memoize the diagnostic callback to prevent unnecessary re-renders
@@ -21,23 +23,55 @@ export default function HomePage() {
     addEvent(type as any, message, data);
   }, [addEvent]);
   
-  const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, testSDK, payDemoPi } = usePiPayment({
+  const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, payDemoPi } = usePiPayment({
     onDiagnostic: diagnosticCallback,
   });
   const { t } = useTranslation();
   const router = useRouter();
   const [paymentState, setPaymentState] = useState<PaymentState>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [sdkTestResult, setSdkTestResult] = useState<'pass' | 'fail' | null>(null);
-  const [isInPiBrowser, setIsInPiBrowser] = useState<boolean | null>(null);
+  // null = unknown/loading, true = SDK ready, false = SDK failed/unavailable
+  const [sdkReady, setSdkReady] = useState<boolean | null>(null);
+  const [warningDismissed, setWarningDismissed] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) router.push('/dashboard');
   }, [isAuthenticated, router]);
 
-  // Detect Pi Browser on mount (client-side only)
+  // Determine SDK availability via events (not User-Agent)
   useEffect(() => {
-    setIsInPiBrowser(isPiBrowser());
+    if (typeof window === 'undefined') return;
+
+    // Already initialized before this component mounted
+    if (window.__TEC_PI_READY) {
+      setSdkReady(true);
+      return;
+    }
+    if (window.__TEC_PI_ERROR) {
+      setSdkReady(false);
+      return;
+    }
+
+    const onReady = () => setSdkReady(true);
+    const onError = () => setSdkReady(false);
+
+    window.addEventListener('tec-pi-ready', onReady, { once: true });
+    window.addEventListener('tec-pi-error', onError, { once: true });
+
+    // After 5 seconds with no signal, mark as unavailable
+    const timer = setTimeout(() => {
+      if (window.__TEC_PI_READY) {
+        setSdkReady(true);
+      } else {
+        setSdkReady(false);
+      }
+    }, SDK_DETECTION_TIMEOUT_MS);
+
+    return () => {
+      window.removeEventListener('tec-pi-ready', onReady);
+      window.removeEventListener('tec-pi-error', onError);
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -49,15 +83,14 @@ export default function HomePage() {
           addEvent('sdk_init', 'Pi SDK initialized successfully');
         }
       };
-      
+
       const handlePiReady = () => {
         addEvent('sdk_init', 'Pi SDK initialized successfully');
       };
-      
+
       checkSDK();
       window.addEventListener('tec-pi-ready', handlePiReady);
-      
-      // Cleanup event listener
+
       return () => {
         window.removeEventListener('tec-pi-ready', handlePiReady);
       };
@@ -75,18 +108,6 @@ export default function HomePage() {
       const errorMsg = err instanceof Error ? err.message : 'Login failed';
       addEvent('error', `Login failed: ${errorMsg}`);
       console.error('Login failed:', err);
-    }
-  };
-
-  const handleTestSdk = () => {
-    const available = testSDK();
-    if (available) {
-      console.log('✅ Pi SDK Test: PASSED');
-      console.log('🌐 Testnet Mode: Demo payments enabled');
-      setSdkTestResult('pass');
-    } else {
-      console.log('❌ Pi SDK Test: FAILED - SDK not available');
-      setSdkTestResult('fail');
     }
   };
 
@@ -200,11 +221,11 @@ export default function HomePage() {
       </div>
 
       <section className={styles.hero}>
-        {/* Pi Browser warning banner – shown only when NOT in Pi Browser (after detection) */}
-        {isInPiBrowser === false && (
+        {/* Pi Browser warning banner – only shown when SDK is confirmed unavailable and not dismissed */}
+        {sdkReady === false && !warningDismissed && (
           <div className={styles.warningBanner}>
             <span className={styles.warningBannerIcon}>⚠️</span>
-            <div>
+            <div style={{ flex: 1 }}>
               <div className={styles.warningBannerTitle}>أنت لست داخل متصفح Pi Network / You are not in Pi Browser</div>
               <div className={styles.warningBannerText}>
                 لن تعمل المصادقة والمدفوعات خارج Pi Browser. افتح تطبيق Pi Network → التطبيقات → TEC App
@@ -212,6 +233,14 @@ export default function HomePage() {
                 Authentication and payments only work inside Pi Browser. Open Pi Network app → Apps → TEC App
               </div>
             </div>
+            <button
+              type="button"
+              className={styles.warningBannerClose}
+              onClick={() => setWarningDismissed(true)}
+              aria-label="Dismiss warning"
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -254,13 +283,6 @@ export default function HomePage() {
           {/* Pi Payment Buttons */}
           <div className={styles.piButtonGroup}>
             <button 
-              className={styles.btnTest} 
-              onClick={handleTestSdk}
-            >
-              🖊️ Test Pi SDK
-            </button>
-
-            <button 
               className={styles.btnPay} 
               onClick={handlePayDemo}
               disabled={!isAuthenticated || isProcessing || paymentState === 'processing'}
@@ -271,20 +293,20 @@ export default function HomePage() {
               ) : isProcessing || paymentState === 'processing' ? (
                 <span>⏳ Processing...</span>
               ) : (
-                <span>💎 Pay 1 Pi - Demo Payment</span>
+                <span>💎 Pay 1 Pi — Demo</span>
               )}
             </button>
           </div>
 
-          {/* SDK test result banner */}
-          {sdkTestResult === 'pass' && (
-            <div className={styles.sdkTestResult} data-result="pass">
-              ✅ Pi SDK متاح / Pi SDK available — Testnet mode active
+          {/* Inline SDK status indicator */}
+          {sdkReady === true && (
+            <div className={styles.sdkStatus} data-status="ready">
+              ● Pi SDK Ready
             </div>
           )}
-          {sdkTestResult === 'fail' && (
-            <div className={styles.sdkTestResult} data-result="fail">
-              ❌ Pi SDK غير متاح / Pi SDK not available — افتح التطبيق داخل Pi Browser / Open inside Pi Browser
+          {sdkReady === false && (
+            <div className={styles.sdkStatus} data-status="unavailable">
+              ● Pi SDK Not Available
             </div>
           )}
 
