@@ -9,6 +9,7 @@ module.exports = {
     'packages/**/*.ts',
     'tec-payment-service/src/controllers/**/*.ts',
     'tec-payment-service/src/routes/**/*.ts',
+    '!packages/tec-core-sdk/src/utils/**',
     '!tec-payment-service/src/index.ts',
     '!tec-payment-service/src/config/**/*.ts',
     '!**/*.d.ts',
@@ -28,12 +29,13 @@ module.exports = {
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   transform: {
-    '^.+\\.ts$': [
+    '^.+\\.tsx?$': [
       'ts-jest',
       {
         tsconfig: {
           esModuleInterop: true,
           allowSyntheticDefaultImports: true,
+          jsx: 'react-jsx',
         },
       },
     ],
