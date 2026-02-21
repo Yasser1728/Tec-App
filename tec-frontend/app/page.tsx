@@ -33,6 +33,7 @@ export default function HomePage() {
   // null = unknown/loading, true = SDK ready, false = SDK failed/unavailable
   const [sdkReady, setSdkReady] = useState<boolean | null>(null);
   const [warningDismissed, setWarningDismissed] = useState(false);
+  const [sdkTestResult, setSdkTestResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) router.push('/dashboard');
@@ -141,6 +142,21 @@ export default function HomePage() {
   const handleRetry = () => {
     setPaymentState('idle');
     setErrorMessage('');
+  };
+
+  const handleTestSdk = () => {
+    const ready = !!(typeof window !== 'undefined' && (window as any).__TEC_PI_READY);
+    const piAvailable = !!(typeof window !== 'undefined' && typeof (window as any).Pi !== 'undefined');
+    const message = ready
+      ? '✅ Pi SDK is loaded! Check console for details.'
+      : piAvailable
+      ? '⚠️ Pi object found but SDK not fully initialized.'
+      : '❌ Pi SDK not available. Open in Pi Browser.';
+    console.log('[TEC] Test SDK:', { ready, piAvailable });
+    setSdkTestResult(message);
+    if (typeof window !== 'undefined') {
+      window.alert(message);
+    }
   };
 
   const getPaymentStatusMessage = () => {
@@ -262,53 +278,58 @@ export default function HomePage() {
         </p>
 
         <div className={`${styles.ctaWrap} fade-up-3`}>
-          {isLoading ? (
-            <button className={`btn-gold ${styles.loginBtn}`} disabled>
-              <span className={styles.spinner} />{t.common.loading}
-            </button>
-          ) : (
-            <>
-              <button 
-                className={`btn-gold ${styles.loginBtn}`} 
-                onClick={handleLogin}
-              >
-                π {t.common.login}
-              </button>
-              {error && (
-                <p className={styles.error}>{error}</p>
-              )}
-            </>
+          {/* Connect with Pi Button */}
+          <button
+            className={styles.btnConnect}
+            onClick={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <><span className={styles.spinner} />{t.common.loading}</>
+            ) : (
+              <>🔗 {t.dashboard.piIntegration.connectBtn}</>
+            )}
+          </button>
+          {error && (
+            <p className={styles.error}>{error}</p>
           )}
 
-          {/* Pi Payment Buttons */}
-          <div className={styles.piButtonGroup}>
-            <button 
-              className={styles.btnPay} 
-              onClick={handlePayDemo}
-              disabled={!isAuthenticated || isProcessing || paymentState === 'processing'}
-              aria-label={!isAuthenticated ? 'يجب تسجيل الدخول عبر Pi Browser أولاً / Login via Pi Browser first' : undefined}
-            >
-              {!isAuthenticated ? (
-                <span>🔒 سجّل الدخول أولاً / Login first</span>
-              ) : isProcessing || paymentState === 'processing' ? (
-                <span>⏳ Processing...</span>
-              ) : (
-                <span>💎 Pay 1 Pi — Demo</span>
-              )}
-            </button>
+          {/* Mode indicator */}
+          <div className={styles.modeIndicator}>
+            🌐 Testnet Mode: Demo payments
           </div>
 
-          {/* Inline SDK status indicator */}
-          {sdkReady === true && (
-            <div className={styles.sdkStatus} data-status="ready">
-              ● Pi SDK Ready
+          {/* Test Pi SDK Button */}
+          <button
+            className={styles.btnTestSdk}
+            onClick={handleTestSdk}
+          >
+            🖊️ Test Pi SDK (Check Console)
+          </button>
+          {sdkTestResult && (
+            <div className={styles.sdkStatus} data-status={sdkReady ? 'ready' : 'unavailable'}>
+              {sdkTestResult}
             </div>
           )}
-          {sdkReady === false && (
-            <div className={styles.sdkStatus} data-status="unavailable">
-              ● Pi SDK Not Available
-            </div>
-          )}
+
+          {/* Pay 1 Pi Demo Button — always visible */}
+          <button
+            className={styles.btnPayDemo}
+            onClick={() => {
+              if (!isAuthenticated) {
+                window.alert('Please connect with Pi first / سجّل الدخول أولاً');
+                return;
+              }
+              handlePayDemo();
+            }}
+            disabled={isProcessing || paymentState === 'processing'}
+          >
+            {isProcessing || paymentState === 'processing' ? (
+              <><span className={styles.spinner} /> Processing...</>
+            ) : (
+              <>💎 Pay 1 Pi - Demo Payment</>
+            )}
+          </button>
 
           {/* Payment Status Messages */}
           {paymentState === 'success' && lastPayment && (
@@ -344,8 +365,8 @@ export default function HomePage() {
               <div className={styles.errorMessage}>
                 {getErrorMessageWithInstructions()}
               </div>
-              <button 
-                className={styles.btnRetry} 
+              <button
+                className={styles.btnRetry}
                 onClick={handleRetry}
               >
                 🔄 Retry
@@ -359,7 +380,6 @@ export default function HomePage() {
               <div>{getPaymentStatusMessage()}</div>
             </div>
           )}
-
 
         </div>
 

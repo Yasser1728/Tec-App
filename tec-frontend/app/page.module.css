@@ -9,47 +9,93 @@
 .title { font-size: clamp(64px, 12vw, 96px); margin-bottom: 8px; line-height: 1; }
 .titleSub { font-size: clamp(16px, 3vw, 22px); color: var(--muted); font-weight: 300; letter-spacing: 0.15em; text-transform: uppercase; display: block; margin-top: 12px; }
 .desc { color: var(--muted); font-size: 15px; line-height: 1.8; margin-top: 32px; margin-bottom: 48px; }
-.ctaWrap { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 64px; }
+.ctaWrap { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 64px; }
 .loginBtn { min-width: 220px; padding: 16px 40px; }
 .spinner { width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #000; border-radius: 50%; animation: rotate-slow 0.7s linear infinite; display: inline-block; }
 .error { color: var(--error); font-size: 13px; }
 
-/* Pi Payment Buttons */
-.piButtonGroup {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 8px;
-}
-
-.btnPay {
-  padding: 13px 28px;
-  border: 1px solid rgba(201, 168, 76, 0.4);
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+/* Connect with Pi button - Cyan/Teal gradient */
+.btnConnect {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #00e5ff, #00d4aa);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #000;
   cursor: pointer;
-  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+  width: 100%;
+  max-width: 500px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.03em;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(201, 168, 76, 0.12);
-  color: var(--gold);
-  min-width: 210px;
 }
-
-.btnPay:hover:not(:disabled) {
-  background: rgba(201, 168, 76, 0.22);
-  box-shadow: 0 6px 20px rgba(201, 168, 76, 0.3);
+.btnConnect:hover {
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 229, 255, 0.35);
+}
+.btnConnect:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.btnPay:disabled {
-  opacity: 0.4;
+/* Test SDK button - Gray */
+.btnTestSdk {
+  padding: 16px 32px;
+  background: #3a3a4a;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e0e0e0;
+  cursor: pointer;
+  width: 100%;
+  max-width: 500px;
+  transition: background 0.2s;
+}
+.btnTestSdk:hover {
+  background: #4a4a5a;
+}
+
+/* Pay Demo button - Pink/Red gradient */
+.btnPayDemo {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #ff6b9d, #ff4757);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  max-width: 500px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btnPayDemo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 71, 87, 0.35);
+}
+.btnPayDemo:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+}
+
+/* Mode indicator */
+.modeIndicator {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  text-align: center;
+  padding: 4px 0;
 }
 
 /* Payment Status Messages */
@@ -153,13 +199,10 @@
 }
 
 @media (max-width: 768px) {
-  .piButtonGroup {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .btnPay {
-    width: 100%;
+  .btnConnect,
+  .btnTestSdk,
+  .btnPayDemo {
+    max-width: 100%;
   }
 }
 
