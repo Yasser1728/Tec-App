@@ -1,11 +1,5 @@
 "use client";
 
-declare global {
-  interface Window {
-    Pi?: any;
-  }
-}
-
 export interface InitPiOptions {
   version?: string;
   sandbox?: boolean;
