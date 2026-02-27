@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePiAuth } from '@/hooks/usePiAuth';
+import { usePiAuth } from '@/lib-client/hooks/usePiAuth';
 import styles from './subscription.module.css';
 
 const PLANS = [

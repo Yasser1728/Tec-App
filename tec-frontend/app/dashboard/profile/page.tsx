@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePiAuth } from '@/hooks/usePiAuth';
+import { usePiAuth } from '@/lib-client/hooks/usePiAuth';
 import styles from './profile.module.css';
 
 export default function ProfilePage() {

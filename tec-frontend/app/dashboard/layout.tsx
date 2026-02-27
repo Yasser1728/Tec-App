@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { usePiAuth } from '@/hooks/usePiAuth';
+import { usePiAuth } from '@/lib-client/hooks/usePiAuth';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import styles from './dashboard.module.css';

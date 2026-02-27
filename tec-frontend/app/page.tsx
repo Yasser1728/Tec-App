@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePiAuth } from '@/hooks/usePiAuth';
-import { usePiPayment } from '@/hooks/usePiPayment';
-import { useDiagnostics } from '@/hooks/useDiagnostics';
+import { usePiAuth } from '@/lib-client/hooks/usePiAuth';
+import { usePiPayment } from '@/lib-client/hooks/usePiPayment';
+import { useDiagnostics } from '@/lib-client/hooks/useDiagnostics';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import styles from './page.module.css';
