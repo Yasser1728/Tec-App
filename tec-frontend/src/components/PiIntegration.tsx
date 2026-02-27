@@ -45,6 +45,11 @@ export default function PiIntegration() {
       const result = await payDemoPi();
       
       console.log('[PiIntegration] Payment result:', result);
+
+      if (!result) {
+        setPaymentState('idle');
+        return;
+      }
       
       if (result.success && result.status === 'completed') {
         setPaymentState('success');

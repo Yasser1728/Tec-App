@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap');
+/* Fonts are loaded via next/font in layout.tsx – no external @import needed */
 
 :root {
   --black:    #050507;
@@ -20,7 +20,7 @@ html { font-size: 16px; scroll-behavior: smooth; }
 body {
   background: var(--black);
   color: var(--white);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
   font-weight: 300;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;

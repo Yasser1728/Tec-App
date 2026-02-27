@@ -121,6 +121,11 @@ export default function HomePage() {
       const result = await payDemoPi();
       
       console.log('[HomePage] Payment result:', result);
+
+      if (!result) {
+        setPaymentState('idle');
+        return;
+      }
       
       if (result.success && result.status === 'completed') {
         setPaymentState('success');
@@ -416,7 +421,7 @@ export default function HomePage() {
       </section>
 
       <footer className={styles.footer}>
-        <span className="gold-text" style={{ fontFamily: 'Cormorant Garamond', fontSize: '18px' }}>{t.common.appName}</span>
+        <span className="gold-text" style={{ fontFamily: 'var(--font-cormorant), Cormorant Garamond, serif', fontSize: '18px' }}>{t.common.appName}</span>
         <span className={styles.footerText}>© 2025 {t.common.tagline}</span>
       </footer>
     </main>

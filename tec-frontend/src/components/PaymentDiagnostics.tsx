@@ -123,7 +123,7 @@ export default function PaymentDiagnostics({
                   <div className={styles.eventTime}>
                     {new Date(event.timestamp).toLocaleTimeString()}
                   </div>
-                  {event.data && (
+                  {!!event.data && (
                     <pre className={styles.eventData}>
                       {JSON.stringify(event.data, null, 2)}
                     </pre>
