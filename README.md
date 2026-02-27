@@ -282,6 +282,35 @@ npx prisma migrate dev
 npm run dev
 ```
 
+### Run frontend tests locally:
+
+The frontend uses [Vitest](https://vitest.dev/) + [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) for unit/component tests.
+
+```bash
+cd tec-frontend
+
+# Install dependencies
+npm ci
+
+# Run tests (headless, single pass)
+npm test
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Also available: lint, typecheck, format
+npm run lint
+npm run typecheck
+npm run format
+```
+
+Test files live in `tec-frontend/src/__tests__/`:
+- `homepage.test.tsx` — smoke test for the HomePage component
+- `usePiAuth.test.ts` — unit tests for the `usePiAuth` hook (Pi SDK mocked)
+- `usePiPayment.test.ts` — unit tests for the `usePiPayment` hook (Pi SDK mocked)
+
+The CI workflow (`.github/workflows/frontend-ci.yml`) runs `lint → typecheck → test` automatically on every pull request that touches `tec-frontend/`.
+
 ### Build for production:
 
 ```bash
