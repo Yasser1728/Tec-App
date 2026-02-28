@@ -110,6 +110,7 @@ docker-compose up -d
 **Frontend environment variables (`tec-frontend/.env.local`):**
 ```
 NEXT_PUBLIC_PI_APP_ID=tec-app-de161fa2243c797b
+NEXT_PUBLIC_PI_APP_URL=https://sandbox.minepi.com/app/tec-app-de161fa2243c797b
 NEXT_PUBLIC_PI_SANDBOX=true
 NEXT_PUBLIC_API_GATEWAY_URL=https://api-gateway-production-6a68.up.railway.app
 # NEXT_PUBLIC_PI_SDK_TIMEOUT=35000   # increase for slow networks
@@ -122,6 +123,37 @@ PI_SANDBOX=true
 PI_API_KEY=                          # obtain from https://developers.minepi.com
 PI_TEST_WALLET=GCVMCQN56ZZGSA6KKT3S6INXHEWPK4CTGWU7AGCEHP5KWSHDL4SJY7CI
 ```
+
+## 🧪 Pi Sandbox Test Flow
+
+A dedicated test page is available at **`/pi-test`** to verify the full auth + payment flow end-to-end without touching production data.
+
+### How to use
+
+1. Open the app inside **Pi Browser** (the SDK is only available there).
+2. Navigate to `/pi-test` (e.g. `https://tec-app.vercel.app/pi-test`).
+3. Click **"Authenticate with Pi"** — watch the log panel for `[AUTH]` events.
+4. Once authenticated, click **"Pay 0.001 Pi (test)"** — the log panel shows each callback:
+   - `onReadyForServerApproval` → POST `/api/payments/approve`
+   - `onReadyForServerCompletion` → POST `/api/payments/complete`
+   - `onCancel` / `onError` → logged with details
+
+### Required env vars for the test page
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_PI_APP_ID` | Passed to `Pi.init({ appId })` |
+| `NEXT_PUBLIC_PI_APP_URL` | Sandbox deep-link URL (informational) |
+| `NEXT_PUBLIC_PI_SANDBOX` | `true` → sandbox mode, `false` → mainnet |
+| `NEXT_PUBLIC_API_GATEWAY_URL` | Backend gateway for approve/complete callbacks |
+| `NEXT_PUBLIC_PI_SDK_TIMEOUT` | *(optional)* SDK load timeout in ms (default 25 000) |
+
+### Allowed domains
+
+Register the following in the [Pi Developer Portal](https://developers.minepi.com) under your app's **Allowed Domains**:
+
+- `https://tec-app.vercel.app`
+- `http://localhost:3001` *(local dev)*
 
 ## 📡 API Endpoints
 
