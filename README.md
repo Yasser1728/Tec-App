@@ -95,6 +95,34 @@ docker-compose up -d
   - http://localhost:5002/health (Wallet Service)
   - http://localhost:5003/health (Payment Service)
 
+## 🥧 Pi Sandbox Setup
+
+| Item | Value |
+|------|-------|
+| Pi App ID | `tec-app-de161fa2243c797b` |
+| Pi Sandbox App URL | `https://sandbox.minepi.com/app/tec-app-de161fa2243c797b` |
+
+**Allowed domains (configure in Pi Developer Portal):**
+- `https://tec-app.vercel.app`
+- `https://sandbox.minepi.com/app/tec-app-de161fa2243c797b`
+- `https://api-gateway-production-6a68.up.railway.app`
+
+**Frontend environment variables (`tec-frontend/.env.local`):**
+```
+NEXT_PUBLIC_PI_APP_ID=tec-app-de161fa2243c797b
+NEXT_PUBLIC_PI_SANDBOX=true
+NEXT_PUBLIC_API_GATEWAY_URL=https://api-gateway-production-6a68.up.railway.app
+# NEXT_PUBLIC_PI_SDK_TIMEOUT=35000   # increase for slow networks
+```
+
+**Backend environment variables (`.env`):**
+```
+PI_APP_ID=tec-app-de161fa2243c797b
+PI_SANDBOX=true
+PI_API_KEY=                          # obtain from https://developers.minepi.com
+PI_TEST_WALLET=GCVMCQN56ZZGSA6KKT3S6INXHEWPK4CTGWU7AGCEHP5KWSHDL4SJY7CI
+```
+
 ## 📡 API Endpoints
 
 ### Authentication Service (`/api/auth/*`)

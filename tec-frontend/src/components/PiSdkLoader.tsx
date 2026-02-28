@@ -24,8 +24,11 @@ export default function PiSdkLoader({ sandbox, timeout }: PiSdkLoaderProps) {
           const elapsed = Date.now() - startTime;
           console.log(`[TEC] Pi SDK loaded after ${elapsed}ms`);
 
-          // ✅ إزالة appId لتجنب TypeScript error
-          window.Pi.init({ version: '2.0', sandbox });
+          const appId = process.env.NEXT_PUBLIC_PI_APP_ID;
+          if (!appId) {
+            console.warn('[TEC] NEXT_PUBLIC_PI_APP_ID is not set — Pi.init() will run without appId');
+          }
+          window.Pi.init({ version: '2.0', sandbox, appId });
 
           console.log(`[TEC] Pi SDK initialized (sandbox: ${sandbox})`);
           window.__TEC_PI_READY = true;

@@ -11,7 +11,7 @@ declare global {
         paymentData: PiPaymentData,
         callbacks: PiPaymentCallbacks
       ) => void;
-      init: (config: { version: string; sandbox: boolean }) => void;
+      init: (config: { version: string; sandbox: boolean; appId?: string }) => void;
     };
     __PI_SANDBOX?: boolean;
     __TEC_PI_READY?: boolean;
