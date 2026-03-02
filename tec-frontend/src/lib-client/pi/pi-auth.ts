@@ -202,33 +202,21 @@ export const loginWithPi = async (): Promise<TecAuthResponse> => {
   console.log('[TEC Pi Auth] isPiBrowser() check passed, proceeding with authentication');
   const piAuth = await authenticateWithTimeout();
 
-  // For Testnet/demo: create a local auth response
-  // TODO(production): Replace with real backend auth endpoint
-  // - Call POST /api/auth/login with piAuth data
-  // - Backend should verify Pi auth token
-  // - Backend should check if user exists in database (isNewUser)
-  // - Backend should generate proper JWT tokens with refresh token rotation
-  const user = {
-    id: piAuth.user.uid,
-    piId: piAuth.user.uid,
-    piUsername: piAuth.user.username,
-    role: 'user',
-    subscriptionPlan: null,
-    createdAt: new Date().toISOString(),
-  };
+  const gatewayRes = await fetch(
+    `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/auth/pi`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken: piAuth.accessToken }),
+    }
+  );
 
-  // TODO(production): Get isNewUser from backend - hardcoded to true for testnet
-  const data: TecAuthResponse = {
-    success: true,
-    isNewUser: true,
-    user,
-    tokens: {
-      accessToken: piAuth.accessToken,
-      // TODO(production): Backend should generate proper refresh token
-      // For testnet, using same token as accessToken
-      refreshToken: piAuth.accessToken, 
-    },
-  };
+  if (!gatewayRes.ok) {
+    const err = await gatewayRes.json().catch(() => ({ message: 'Auth failed' }));
+    throw new Error(err.message || 'فشل التحقق من Pi / Pi verification failed');
+  }
+
+  const data: TecAuthResponse = await gatewayRes.json();
 
   // Wrap localStorage calls to handle private browsing mode
   try {

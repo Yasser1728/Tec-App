@@ -35,6 +35,8 @@ export const usePiPayment = (options?: UsePiPaymentOptions) => {
     };
   }, []);
 
+  const onDiagnostic = options?.onDiagnostic;
+
   const payDemoPi = useCallback(async (amount: number = 1) => {
     if (!isMountedRef.current) return;
     
@@ -44,7 +46,7 @@ export const usePiPayment = (options?: UsePiPaymentOptions) => {
         amount, 
         `TEC Demo Payment - ${amount} Pi`, 
         { type: 'demo' },
-        options?.onDiagnostic
+        onDiagnostic
       );
       
       // Only update state if component is still mounted
@@ -74,7 +76,7 @@ export const usePiPayment = (options?: UsePiPaymentOptions) => {
       }
       
       // Log error to diagnostics
-      options?.onDiagnostic?.('error', message, { errorType });
+      onDiagnostic?.('error', message, { errorType });
       
       // Only update state if component is still mounted
       if (isMountedRef.current) {
@@ -87,7 +89,7 @@ export const usePiPayment = (options?: UsePiPaymentOptions) => {
       }
       throw err;
     }
-  }, [options?.onDiagnostic]);
+  }, [onDiagnostic]);
 
   const testSDK = useCallback(() => {
     const available = testPiSDK();

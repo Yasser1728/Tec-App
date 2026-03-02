@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-static';
-
-const isSandbox = process.env.PI_SANDBOX === 'true';
-
-const PI_API_URL = isSandbox
+const PI_API_URL = process.env.NEXT_PUBLIC_PI_SANDBOX === 'true'
   ? 'https://api.sandbox.minepi.com'
   : 'https://api.minepi.com';
 
