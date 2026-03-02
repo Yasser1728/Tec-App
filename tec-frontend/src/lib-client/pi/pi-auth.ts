@@ -203,7 +203,7 @@ export const loginWithPi = async (): Promise<TecAuthResponse> => {
   const piAuth = await authenticateWithTimeout();
 
   const gatewayRes = await fetch(
-    `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/auth/pi`,
+    `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/auth/pi-login`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
