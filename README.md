@@ -292,6 +292,31 @@ Tec-App/
 └── README.md
 ```
 
+## 🩺 Health Check & Backend Status
+
+The frontend includes a built-in health check system that monitors backend availability and surfaces issues to users immediately.
+
+### How It Works
+
+1. **`tec-frontend/src/lib/health-check.ts`** — Core utility that calls `GET ${NEXT_PUBLIC_API_GATEWAY_URL}/health` with a 5-second timeout and returns a `HealthStatus` object (`online`, `status`, `services`, `error`).
+
+2. **`tec-frontend/src/hooks/useBackendHealth.ts`** — React hook (`useBackendHealth(intervalMs?)`) that components use to subscribe to backend health state. Optionally polls on a configurable interval.
+
+3. **`tec-frontend/src/components/BackendOfflineBanner.tsx`** — Client component rendered in the root layout that displays a red warning banner when the backend is unreachable. Polls every 30 seconds and provides a **Retry** button to recheck immediately.
+
+### Backend Downtime Behavior
+
+- On initial page load the frontend silently checks the gateway health endpoint.
+- If the backend is offline, a `⚠️ Backend Offline` banner appears at the top of every page.
+- The banner auto-clears once the backend comes back online (next 30-second poll or after clicking **Retry**).
+- Auth and payment operations remain available in the UI but will fail gracefully with error messages if the backend is unreachable.
+
+### Gateway Health Endpoint
+
+- **URL:** `https://api-gateway-production-6a68.up.railway.app/health`
+- **Method:** `GET`
+- **Success response:** `{ "status": "ok" | "degraded", "services": { ... } }`
+
 ## 🔐 Security Features
 
 - **JWT-based authentication** with access and refresh tokens

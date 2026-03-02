@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
 import { ClientProviders } from '@/components/ClientProviders';
 import PiSdkLoader from '@/components/PiSdkLoader';
-import BackendStatus from '@/components/BackendStatus';
+import { BackendOfflineBanner } from '@/components/BackendOfflineBanner';
 
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
@@ -46,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {/* PiSdkLoader replaces the dangerouslySetInnerHTML inline init script */}
         <PiSdkLoader sandbox={piSandbox} timeout={sdkTimeout} />
-        <BackendStatus />
+        <BackendOfflineBanner />
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
