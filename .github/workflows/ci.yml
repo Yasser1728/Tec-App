@@ -86,6 +86,6 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_PI_SDK: ${{ secrets.NEXT_PUBLIC_PI_SDK || 'https://sdk.minepi.com/pi-sdk.js' }}
-          NEXT_PUBLIC_PI_APP_ID: ${{ secrets.NEXT_PUBLIC_PI_APP_ID || 'tec-app-de161fa2243c797b' }}
+          NEXT_PUBLIC_PI_APP_ID: ${{ secrets.NEXT_PUBLIC_PI_APP_ID || 'your-pi-app-id' }}
           NEXT_PUBLIC_PI_SANDBOX: 'true'
-          NEXT_PUBLIC_API_GATEWAY_URL: ${{ secrets.NEXT_PUBLIC_API_GATEWAY_URL || 'https://api-gateway-production-6a68.up.railway.app' }}
+          NEXT_PUBLIC_API_GATEWAY_URL: ${{ secrets.NEXT_PUBLIC_API_GATEWAY_URL || 'https://your-api-gateway.example.com' }}
