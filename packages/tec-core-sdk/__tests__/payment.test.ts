@@ -180,5 +180,100 @@ describe('TecPaymentSDK', () => {
       });
       expect(result).toEqual(mockResult);
     });
+
+    it('E2E flow: create → approve → complete resolves with COMPLETED status', async () => {
+      (isPiBrowser as jest.Mock).mockReturnValue(true);
+
+      const mockResult: PaymentResult = {
+        success: true,
+        paymentId: 'pi-pay-e2e',
+        txid: 'txid-e2e',
+        status: 'completed',
+        amount: 5,
+        memo: 'E2E payment',
+      };
+
+      const mockCreatePayment = jest.fn();
+      (window as unknown as Record<string, unknown>).Pi = { createPayment: mockCreatePayment };
+
+      mockClient.post.mockImplementation(async (url: string) => {
+        if (url === '/api/payments/create') return { data: { id: 'e2e-uuid' } };
+        if (url === '/api/payments/approve') return { success: true };
+        if (url === '/api/payments/complete') return mockResult;
+        return {};
+      });
+
+      const paymentPromise = paymentSDK.createU2APayment(5, 'E2E payment');
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const callbacks = mockCreatePayment.mock.calls[0][1];
+
+      // Step: approval
+      await callbacks.onReadyForServerApproval('pi-pay-e2e');
+      expect(mockClient.post).toHaveBeenCalledWith('/api/payments/approve', {
+        payment_id: 'e2e-uuid',
+        pi_payment_id: 'pi-pay-e2e',
+      });
+
+      // Step: completion
+      await callbacks.onReadyForServerCompletion('pi-pay-e2e', 'txid-e2e');
+      const result = await paymentPromise;
+
+      expect(mockClient.post).toHaveBeenCalledWith('/api/payments/complete', {
+        payment_id: 'e2e-uuid',
+        transaction_id: 'txid-e2e',
+      });
+      expect(result.status).toBe('completed');
+      expect(result.success).toBe(true);
+    });
+
+    it('should not call /api/payments/complete a second time if onReadyForServerCompletion fires twice', async () => {
+      (isPiBrowser as jest.Mock).mockReturnValue(true);
+
+      const mockResult: PaymentResult = {
+        success: true,
+        paymentId: 'pi-pay-dup',
+        txid: 'txid-dup',
+        status: 'completed',
+        amount: 1,
+        memo: 'Dup test',
+      };
+
+      const mockCreatePayment = jest.fn();
+      (window as unknown as Record<string, unknown>).Pi = { createPayment: mockCreatePayment };
+
+      mockClient.post.mockImplementation(async (url: string) => {
+        if (url === '/api/payments/create') return { data: { id: 'dup-uuid' } };
+        if (url === '/api/payments/complete') return mockResult;
+        return {};
+      });
+
+      const paymentPromise = paymentSDK.createU2APayment(1, 'Dup test');
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const callbacks = mockCreatePayment.mock.calls[0][1];
+
+      // First completion call — should resolve the promise
+      await callbacks.onReadyForServerCompletion('pi-pay-dup', 'txid-dup');
+      await paymentPromise;
+
+      // Second completion call — should be silently ignored (no additional post call)
+      await callbacks.onReadyForServerCompletion('pi-pay-dup', 'txid-dup');
+
+      const completeCalls = mockClient.post.mock.calls.filter(([url]) => url === '/api/payments/complete');
+      expect(completeCalls).toHaveLength(1);
+    });
+
+    it('should not call window.Pi.createPayment if backend pre-create fails (no orphaned Pi payment)', async () => {
+      (isPiBrowser as jest.Mock).mockReturnValue(true);
+
+      const mockCreatePayment = jest.fn();
+      (window as unknown as Record<string, unknown>).Pi = { createPayment: mockCreatePayment };
+
+      mockClient.post.mockRejectedValue(new Error('Backend unavailable'));
+
+      await expect(paymentSDK.createU2APayment(10, 'Test')).rejects.toThrow('Backend unavailable');
+      expect(mockCreatePayment).not.toHaveBeenCalled();
+    });
   });
 });

@@ -32,6 +32,9 @@ export class TecPaymentSDK {
     const internalPaymentId = createResult.data.id;
 
     return new Promise((resolve, reject) => {
+      // Guard: prevent duplicate completion calls (e.g. Pi SDK retry behaviour)
+      let completionCalled = false;
+
       window.Pi.createPayment(
         { amount, memo, metadata },
         {
@@ -47,6 +50,8 @@ export class TecPaymentSDK {
             }
           },
           onReadyForServerCompletion: async (_piPaymentId: string, txid: string) => {
+            if (completionCalled) return;
+            completionCalled = true;
             try {
               const result = await this.client.post<PaymentResult>('/api/payments/complete', {
                 payment_id: internalPaymentId,
