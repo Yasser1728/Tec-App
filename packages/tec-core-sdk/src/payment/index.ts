@@ -15,27 +15,48 @@ export class TecPaymentSDK {
   }
 
   // User-to-App payment (client-side via Pi SDK)
-  createU2APayment(amount: number, memo: string, metadata: Record<string, unknown> = {}): Promise<PaymentResult> {
+  async createU2APayment(amount: number, memo: string, metadata: Record<string, unknown> = {}): Promise<PaymentResult> {
+    if (!isPiBrowser()) {
+      throw new Error('Pi SDK غير متاح');
+    }
+
+    // Step 1: Create payment record in backend to obtain internal UUID.
+    // userId 'current' is resolved from the JWT by the backend.
+    const createResult = await this.client.post<{ data: { id: string } }>('/api/payments/create', {
+      userId: 'current',
+      amount,
+      currency: 'PI',
+      payment_method: 'pi',
+      metadata,
+    });
+    const internalPaymentId = createResult.data.id;
+
     return new Promise((resolve, reject) => {
-      if (!isPiBrowser()) {
-        reject(new Error('Pi SDK غير متاح'));
-        return;
-      }
+      // Guard: prevent duplicate completion calls (e.g. Pi SDK retry behaviour)
+      let completionCalled = false;
 
       window.Pi.createPayment(
         { amount, memo, metadata },
         {
-          onReadyForServerApproval: async (paymentId: string) => {
+          onReadyForServerApproval: async (piPaymentId: string) => {
             try {
-              await this.client.post('/api/payments/approve', { paymentId });
+              await this.client.post('/api/payments/approve', {
+                payment_id: internalPaymentId,
+                pi_payment_id: piPaymentId,
+              });
             } catch (err) {
               console.error('Server approval failed:', err);
               reject(err instanceof Error ? err : new Error('Server approval failed'));
             }
           },
-          onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+          onReadyForServerCompletion: async (_piPaymentId: string, txid: string) => {
+            if (completionCalled) return;
+            completionCalled = true;
             try {
-              const result = await this.client.post<PaymentResult>('/api/payments/complete', { paymentId, txid });
+              const result = await this.client.post<PaymentResult>('/api/payments/complete', {
+                payment_id: internalPaymentId,
+                transaction_id: txid,
+              });
               resolve(result);
             } catch (err) {
               reject(err);

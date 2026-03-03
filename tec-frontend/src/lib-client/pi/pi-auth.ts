@@ -7,10 +7,7 @@ declare global {
         scopes: string[],
         onIncompletePayment: (payment: unknown) => void
       ) => Promise<PiAuthResult>;
-      createPayment: (
-        paymentData: PiPaymentData,
-        callbacks: PiPaymentCallbacks
-      ) => void;
+      createPayment: (paymentData: PiPaymentData, callbacks: PiPaymentCallbacks) => void;
       init: (config: { version: string; sandbox: boolean; appId?: string }) => void;
     };
     __PI_SANDBOX?: boolean;
@@ -26,28 +23,15 @@ export const isPiBrowser = (): boolean => {
   return typeof window.Pi !== 'undefined' && typeof window.Pi.authenticate === 'function';
 };
 
-// Handle incomplete payments from previous sessions
-const handleIncompletePayment = async (payment: unknown) => {
-  console.warn('Incomplete payment detected:', payment);
-  try {
-    const paymentObj = payment as { identifier?: string };
-    if (paymentObj?.identifier) {
-      // [source: Core-Backend]
-      await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/incomplete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentId: paymentObj.identifier }),
-      });
-    }
-  } catch (err) {
-    console.error('Failed to handle incomplete payment:', err);
-  }
+// Handle incomplete payments from previous sessions (no-op: /payments/incomplete endpoint not yet available)
+const handleIncompletePayment = (payment: unknown) => {
+  console.warn('Incomplete payment detected (no action taken):', payment);
 };
 
 /**
  * Waits for the Pi SDK to be ready before attempting authentication.
  * Resolves immediately if Pi SDK is already loaded, otherwise waits for 'tec-pi-ready' event.
- * 
+ *
  * @param timeout - Maximum time to wait for SDK in milliseconds (default: 15000ms)
  *                  Note: This is separate from SDK initialization timeout (25s in layout.tsx)
  *                  This timeout is for waiting after page load, while SDK timeout is for initial load
@@ -59,37 +43,43 @@ export const waitForPiSDK = (timeout = 15000): Promise<void> => {
     // Check if Pi SDK init failed
     if (typeof window !== 'undefined' && window.__TEC_PI_ERROR) {
       // No need to register listeners if SDK already failed
-      reject(new Error(
-        'تعذر تحميل Pi SDK. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
-        'Pi SDK failed to load. Please check your internet connection and try again.'
-      ));
+      reject(
+        new Error(
+          'تعذر تحميل Pi SDK. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
+            'Pi SDK failed to load. Please check your internet connection and try again.'
+        )
+      );
       return;
     }
-    
+
     // Check if Pi SDK is already ready (window.Pi exists and __TEC_PI_READY flag is set)
     // Both must be true for safety - the flag indicates successful Pi.init()
-    if (typeof window !== 'undefined' && 
-        typeof window.Pi !== 'undefined' && 
-        window.__TEC_PI_READY) {
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.Pi !== 'undefined' &&
+      window.__TEC_PI_READY
+    ) {
       console.log('[TEC Pi Auth] Pi SDK already ready');
       resolve();
       return;
     }
-    
+
     const startTime = Date.now();
     console.log(`[TEC Pi Auth] Waiting for Pi SDK (timeout: ${timeout}ms)...`);
-    
+
     const timer = setTimeout(() => {
       window.removeEventListener('tec-pi-ready', onReady);
       window.removeEventListener('tec-pi-error', onError);
       const elapsed = Date.now() - startTime;
       console.error(`[TEC Pi Auth] Pi SDK wait timeout after ${elapsed}ms`);
-      reject(new Error(
-        'تعذر تحميل Pi SDK. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
-        'Pi SDK failed to load. Please check your internet connection and try again.'
-      ));
+      reject(
+        new Error(
+          'تعذر تحميل Pi SDK. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.\n' +
+            'Pi SDK failed to load. Please check your internet connection and try again.'
+        )
+      );
     }, timeout);
-    
+
     const onReady = () => {
       const elapsed = Date.now() - startTime;
       console.log(`[TEC Pi Auth] Pi SDK ready after ${elapsed}ms`);
@@ -97,19 +87,21 @@ export const waitForPiSDK = (timeout = 15000): Promise<void> => {
       window.removeEventListener('tec-pi-error', onError);
       resolve();
     };
-    
+
     const onError = (event: Event) => {
       const elapsed = Date.now() - startTime;
       const detail = (event as CustomEvent).detail;
       console.error(`[TEC Pi Auth] Pi SDK init error after ${elapsed}ms:`, detail);
       clearTimeout(timer);
       window.removeEventListener('tec-pi-ready', onReady);
-      reject(new Error(
-        'فشل تهيئة Pi SDK. يرجى المحاولة مرة أخرى.\n' +
-        'Pi SDK initialization failed. Please try again.'
-      ));
+      reject(
+        new Error(
+          'فشل تهيئة Pi SDK. يرجى المحاولة مرة أخرى.\n' +
+            'Pi SDK initialization failed. Please try again.'
+        )
+      );
     };
-    
+
     window.addEventListener('tec-pi-ready', onReady, { once: true });
     window.addEventListener('tec-pi-error', onError, { once: true });
   });
@@ -122,7 +114,7 @@ const getAuthTimeout = (): number => {
   const envTimeout = process.env.NEXT_PUBLIC_PI_AUTH_TIMEOUT
     ? parseInt(process.env.NEXT_PUBLIC_PI_AUTH_TIMEOUT, 10)
     : 45000;
-  
+
   // Validate and cap timeout (must be positive, max 2 minutes for safety)
   if (!isNaN(envTimeout) && envTimeout > 0 && envTimeout < 120000) {
     return envTimeout;
@@ -132,22 +124,24 @@ const getAuthTimeout = (): number => {
 
 const authenticateWithTimeout = async (timeout?: number): Promise<PiAuthResult> => {
   const effectiveTimeout = timeout ?? getAuthTimeout();
-  
+
   // First wait for Pi SDK to be ready
   await waitForPiSDK();
-  
+
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
-    
+
     // Debug logging
     console.log('[TEC Pi Auth] Starting authentication...');
     console.log('[TEC Pi Auth] window.Pi exists:', typeof window.Pi !== 'undefined');
     console.log('[TEC Pi Auth] Requested scopes:', ['username', 'payments', 'wallet_address']);
     console.log(`[TEC Pi Auth] Timeout value: ${effectiveTimeout}ms`);
-    
+
     const timer = setTimeout(() => {
       const elapsed = Date.now() - startTime;
-      console.error(`[TEC Pi Auth] Authentication timed out after ${elapsed}ms (timeout: ${effectiveTimeout}ms)`);
+      console.error(
+        `[TEC Pi Auth] Authentication timed out after ${elapsed}ms (timeout: ${effectiveTimeout}ms)`
+      );
       // Provide a specific message depending on the actual failure point
       const sdkReady = typeof window !== 'undefined' && !!window.__TEC_PI_READY;
       const inPiBrowser = isPiBrowser();
@@ -171,20 +165,22 @@ const authenticateWithTimeout = async (timeout?: number): Promise<PiAuthResult> 
     }, effectiveTimeout);
 
     console.log('[TEC Pi Auth] Calling window.Pi.authenticate()...');
-    window.Pi.authenticate(
-      ['username', 'payments', 'wallet_address'],
-      handleIncompletePayment
-    ).then(result => {
-      clearTimeout(timer);
-      const elapsed = Date.now() - startTime;
-      console.log(`[TEC Pi Auth] Authentication successful after ${elapsed}ms:`, { uid: result.user.uid, username: result.user.username });
-      resolve(result);
-    }).catch(err => {
-      clearTimeout(timer);
-      const elapsed = Date.now() - startTime;
-      console.error(`[TEC Pi Auth] Authentication failed after ${elapsed}ms with error:`, err);
-      reject(err);
-    });
+    window.Pi.authenticate(['username', 'payments', 'wallet_address'], handleIncompletePayment)
+      .then((result) => {
+        clearTimeout(timer);
+        const elapsed = Date.now() - startTime;
+        console.log(`[TEC Pi Auth] Authentication successful after ${elapsed}ms:`, {
+          uid: result.user.uid,
+          username: result.user.username,
+        });
+        resolve(result);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        const elapsed = Date.now() - startTime;
+        console.error(`[TEC Pi Auth] Authentication failed after ${elapsed}ms with error:`, err);
+        reject(err);
+      });
   });
 };
 
@@ -193,23 +189,20 @@ export const loginWithPi = async (): Promise<TecAuthResponse> => {
     console.error('[TEC Pi Auth] Not in Pi Browser - window.Pi is undefined');
     throw new Error(
       'يرجى فتح التطبيق داخل متصفح Pi Network للمصادقة.\n' +
-      'Please open the app inside Pi Browser to authenticate.\n\n' +
-      'تعليمات: افتح تطبيق Pi Network → التطبيقات → TEC App\n' +
-      'Instructions: Open Pi Network app → Apps → TEC App'
+        'Please open the app inside Pi Browser to authenticate.\n\n' +
+        'تعليمات: افتح تطبيق Pi Network → التطبيقات → TEC App\n' +
+        'Instructions: Open Pi Network app → Apps → TEC App'
     );
   }
 
   console.log('[TEC Pi Auth] isPiBrowser() check passed, proceeding with authentication');
   const piAuth = await authenticateWithTimeout();
 
-  const gatewayRes = await fetch(
-    `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/auth/pi-login`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: piAuth.accessToken }),
-    }
-  );
+  const gatewayRes = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/auth/pi-login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accessToken: piAuth.accessToken }),
+  });
 
   if (!gatewayRes.ok) {
     const err = await gatewayRes.json().catch(() => ({ message: 'Auth failed' }));
@@ -227,7 +220,7 @@ export const loginWithPi = async (): Promise<TecAuthResponse> => {
     console.error('[Pi Auth] Failed to save to localStorage (private browsing mode?):', err);
     throw new Error(
       'تعذر حفظ بيانات المصادقة. يرجى التأكد من عدم استخدام وضع التصفح الخاص.\n' +
-      'Failed to save authentication data. Please ensure private browsing mode is disabled.'
+        'Failed to save authentication data. Please ensure private browsing mode is disabled.'
     );
   }
 
