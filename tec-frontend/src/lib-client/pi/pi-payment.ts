@@ -69,6 +69,8 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
   const token = getAccessToken();
   if (!token) throw new Error('غير مصرح — سجل الدخول أولاً / Unauthorized - Please log in first');
 
+  const idempotencyKey = crypto.randomUUID();
+
   try {
     // [source: Core-Backend]
     const response = await retryFetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/a2u`, {
@@ -76,6 +78,7 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
+        'Idempotency-Key': idempotencyKey,
       },
       body: JSON.stringify(data),
     });
@@ -114,6 +117,8 @@ export const createU2APayment = async (
   // Wait for Pi SDK to be ready before attempting payment
   await waitForPiSDK();
 
+  const idempotencyKey = crypto.randomUUID();
+
   // Step 1: Create backend payment record first (tec-ecosystem flow).
   // This gives us an internal UUID (internalId) which the approve/complete
   // endpoints require as payment_id. If creation fails (e.g. userId not yet
@@ -129,7 +134,7 @@ export const createU2APayment = async (
       console.log('[Pi Payment] Creating backend payment record for userId:', userId);
       const createRes = await retryFetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify({ userId, amount, payment_method: 'pi', metadata }),
       });
       if (createRes.ok) {
@@ -244,7 +249,7 @@ export const createU2APayment = async (
             // [source: Core-Backend]
             const res = await retryFetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/approve`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
               body: JSON.stringify({ payment_id: internalId, pi_payment_id: piPaymentId }),
             });
             
@@ -324,7 +329,7 @@ export const createU2APayment = async (
             // [source: Core-Backend]
             const res = await retryFetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/complete`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
               body: JSON.stringify({ payment_id: internalId, transaction_id: txid }),
             });
             

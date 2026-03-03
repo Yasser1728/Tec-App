@@ -85,10 +85,11 @@ export class TecApiClient {
     return this.request<T>(endpoint, { method: 'GET' });
   }
 
-  async post<T>(endpoint: string, body: unknown): Promise<T> {
+  async post<T>(endpoint: string, body: unknown, headers?: Record<string, string>): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: JSON.stringify(body),
+      headers,
     });
   }
 

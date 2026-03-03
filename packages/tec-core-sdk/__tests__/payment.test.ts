@@ -54,7 +54,11 @@ describe('TecPaymentSDK', () => {
 
       const result = await paymentSDK.createA2UPayment(request);
 
-      expect(mockClient.post).toHaveBeenCalledWith('/api/payments/a2u', request);
+      expect(mockClient.post).toHaveBeenCalledWith(
+        '/api/payments/a2u',
+        request,
+        expect.objectContaining({ 'Idempotency-Key': expect.any(String) })
+      );
       expect(result).toEqual(mockResult);
     });
   });
@@ -134,7 +138,7 @@ describe('TecPaymentSDK', () => {
       expect(mockClient.post).toHaveBeenCalledWith('/api/payments/approve', {
         payment_id: 'internal-uuid-123',
         pi_payment_id: 'pi-payment-id-abc',
-      });
+      }, expect.objectContaining({ 'Idempotency-Key': expect.any(String) }));
 
       // Promise intentionally left unresolved — we only test the approval callback, not the full flow
       paymentPromise.catch(() => {});
@@ -177,7 +181,7 @@ describe('TecPaymentSDK', () => {
       expect(mockClient.post).toHaveBeenCalledWith('/api/payments/complete', {
         payment_id: 'internal-uuid-123',
         transaction_id: 'txid-xyz',
-      });
+      }, expect.objectContaining({ 'Idempotency-Key': expect.any(String) }));
       expect(result).toEqual(mockResult);
     });
 
@@ -213,7 +217,7 @@ describe('TecPaymentSDK', () => {
       expect(mockClient.post).toHaveBeenCalledWith('/api/payments/approve', {
         payment_id: 'e2e-uuid',
         pi_payment_id: 'pi-pay-e2e',
-      });
+      }, expect.objectContaining({ 'Idempotency-Key': expect.any(String) }));
 
       // Step: completion
       await callbacks.onReadyForServerCompletion('pi-pay-e2e', 'txid-e2e');
@@ -222,9 +226,55 @@ describe('TecPaymentSDK', () => {
       expect(mockClient.post).toHaveBeenCalledWith('/api/payments/complete', {
         payment_id: 'e2e-uuid',
         transaction_id: 'txid-e2e',
-      });
+      }, expect.objectContaining({ 'Idempotency-Key': expect.any(String) }));
       expect(result.status).toBe('completed');
       expect(result.success).toBe(true);
+    });
+
+    it('should use the same Idempotency-Key for approve and complete', async () => {
+      (isPiBrowser as jest.Mock).mockReturnValue(true);
+
+      const mockCreatePayment = jest.fn();
+      (window as unknown as Record<string, unknown>).Pi = { createPayment: mockCreatePayment };
+
+      const mockResult: PaymentResult = {
+        success: true,
+        paymentId: 'pi-pay-idem',
+        txid: 'txid-idem',
+        status: 'completed',
+        amount: 7,
+        memo: 'Idempotency test',
+      };
+
+      mockClient.post.mockImplementation(async (url: string) => {
+        if (url === '/api/payments/create') return { data: { id: 'idem-uuid' } };
+        if (url === '/api/payments/approve') return { success: true };
+        if (url === '/api/payments/complete') return mockResult;
+        return {};
+      });
+
+      const paymentPromise = paymentSDK.createU2APayment(7, 'Idempotency test');
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const callbacks = mockCreatePayment.mock.calls[0][1];
+
+      await callbacks.onReadyForServerApproval('pi-pay-idem');
+      await callbacks.onReadyForServerCompletion('pi-pay-idem', 'txid-idem');
+      await paymentPromise;
+
+      const approveCall = mockClient.post.mock.calls.find(([url]) => url === '/api/payments/approve');
+      const completeCall = mockClient.post.mock.calls.find(([url]) => url === '/api/payments/complete');
+
+      expect(approveCall).toBeDefined();
+      expect(completeCall).toBeDefined();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const approveKey = (approveCall as any[])[2]?.['Idempotency-Key'];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const completeKey = (completeCall as any[])[2]?.['Idempotency-Key'];
+
+      expect(approveKey).toBeTruthy();
+      expect(approveKey).toBe(completeKey);
     });
 
     it('should not call /api/payments/complete a second time if onReadyForServerCompletion fires twice', async () => {

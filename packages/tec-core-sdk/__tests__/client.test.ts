@@ -103,6 +103,29 @@ describe('TecApiClient', () => {
         })
       );
     });
+
+    it('should merge custom headers into the request', async () => {
+      (storage.get as jest.Mock).mockReturnValue('test-token');
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const body = { key: 'value' };
+      const customHeaders = { 'Idempotency-Key': 'test-uuid-1234' };
+      await client.post('/test', body, customHeaders);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.test.com/test',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            'Idempotency-Key': 'test-uuid-1234',
+          }),
+        })
+      );
+    });
   });
 
   describe('Token refresh', () => {

@@ -11,7 +11,8 @@ export class TecPaymentSDK {
 
   // App-to-User payment (server-side)
   async createA2UPayment(data: A2UPaymentRequest): Promise<PaymentResult> {
-    return this.client.post<PaymentResult>('/api/payments/a2u', data);
+    const idempotencyKey = crypto.randomUUID();
+    return this.client.post<PaymentResult>('/api/payments/a2u', data, { 'Idempotency-Key': idempotencyKey });
   }
 
   // User-to-App payment (client-side via Pi SDK)
@@ -19,6 +20,8 @@ export class TecPaymentSDK {
     if (!isPiBrowser()) {
       throw new Error('Pi SDK غير متاح');
     }
+
+    const idempotencyKey = crypto.randomUUID();
 
     // Step 1: Create payment record in backend to obtain internal UUID.
     // userId 'current' is resolved from the JWT by the backend.
@@ -43,7 +46,7 @@ export class TecPaymentSDK {
               await this.client.post('/api/payments/approve', {
                 payment_id: internalPaymentId,
                 pi_payment_id: piPaymentId,
-              });
+              }, { 'Idempotency-Key': idempotencyKey });
             } catch (err) {
               console.error('Server approval failed:', err);
               reject(err instanceof Error ? err : new Error('Server approval failed'));
@@ -56,7 +59,7 @@ export class TecPaymentSDK {
               const result = await this.client.post<PaymentResult>('/api/payments/complete', {
                 payment_id: internalPaymentId,
                 transaction_id: txid,
-              });
+              }, { 'Idempotency-Key': idempotencyKey });
               resolve(result);
             } catch (err) {
               reject(err);
