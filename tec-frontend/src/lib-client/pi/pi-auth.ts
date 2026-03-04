@@ -205,11 +205,33 @@ export const loginWithPi = async (): Promise<TecAuthResponse> => {
   });
 
   if (!gatewayRes.ok) {
-    const err = await gatewayRes.json().catch(() => ({ message: 'Auth failed' }));
-    throw new Error(err.message || 'فشل التحقق من Pi / Pi verification failed');
+    const errBody = await gatewayRes.json().catch(() => ({ message: 'Auth failed' }));
+    // Backend error format: { success: false, error: { code, message } }
+    const errMsg =
+      errBody?.error?.message || errBody?.message || 'فشل التحقق من Pi / Pi verification failed';
+    throw new Error(errMsg);
   }
 
-  const data: TecAuthResponse = await gatewayRes.json();
+  const raw = await gatewayRes.json();
+  // The auth service wraps the response in { success, data: { user, tokens, isNewUser } }.
+  // Unwrap so the rest of the code can access user/tokens directly.
+  const envelope = raw.data ?? raw;
+  const data: TecAuthResponse = {
+    success: raw.success ?? true,
+    isNewUser: envelope.isNewUser ?? false,
+    user: {
+      id: envelope.user?.id ?? '',
+      piId: envelope.user?.piUid ?? envelope.user?.pi_uid ?? '',
+      piUsername: envelope.user?.piUsername ?? envelope.user?.pi_username ?? '',
+      role: envelope.user?.role ?? 'user',
+      subscriptionPlan: envelope.user?.subscriptionPlan ?? null,
+      createdAt: envelope.user?.created_at ?? envelope.user?.createdAt ?? '',
+    },
+    tokens: {
+      accessToken: envelope.tokens?.accessToken ?? '',
+      refreshToken: envelope.tokens?.refreshToken ?? '',
+    },
+  };
 
   // Wrap localStorage calls to handle private browsing mode
   try {
