@@ -1,6 +1,6 @@
 import { TecApiClient } from '../client';
 import { isPiBrowser } from '../utils/pi-browser';
-import type { A2UPaymentRequest, PaymentResult, Payment } from '../types';
+import type { A2UPaymentRequest, PaymentResult, Payment, PaymentHistoryOptions, PaginatedPaymentHistory } from '../types';
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 const PI_PAYMENT_ID_REGEX = /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$/;
@@ -134,6 +134,31 @@ export class TecPaymentSDK {
       throw new Error('paymentId is required');
     }
     return this.client.get<Payment>(`/api/payments/${encodeURIComponent(paymentId)}/status`);
+  }
+
+  // Cancel a payment
+  async cancelPayment(paymentId: string): Promise<PaymentResult> {
+    if (!paymentId) {
+      throw new Error('paymentId is required');
+    }
+    return this.client.post<PaymentResult>('/api/payments/cancel', {
+      payment_id: paymentId,
+    });
+  }
+
+  // Get payment history (paginated)
+  async getPaymentHistory(options?: PaymentHistoryOptions): Promise<PaginatedPaymentHistory> {
+    const params = new URLSearchParams();
+    if (options?.page) params.set('page', String(options.page));
+    if (options?.limit) params.set('limit', String(options.limit));
+    if (options?.status) params.set('status', options.status);
+    if (options?.payment_method) params.set('payment_method', options.payment_method);
+    if (options?.from) params.set('from', options.from);
+    if (options?.to) params.set('to', options.to);
+    if (options?.sort) params.set('sort', options.sort);
+
+    const qs = params.toString();
+    return this.client.get<PaginatedPaymentHistory>(`/api/payments/history${qs ? `?${qs}` : ''}`);
   }
 
   // Test Pi SDK availability

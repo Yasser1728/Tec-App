@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
 import { TecAuthContext } from '../auth/provider';
 import { TecWalletSDK } from './index';
-import type { Wallet, WalletBalance, Transaction, TransactionHistoryOptions, PaginatedResponse } from '../types';
+import type { Wallet, WalletBalance, TransactionHistoryOptions } from '../types';
+import type { WalletTransactionsResponse } from './index';
 
 interface WalletState {
   wallets: Wallet[];
@@ -28,19 +29,25 @@ export const useTecWallet = () => {
   });
 
   const fetchWallets = useCallback(async () => {
-    if (!authContext.isAuthenticated) return;
+    if (!authContext.isAuthenticated || !authContext.user) return;
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
-      const wallets = await walletSDK.getWallets();
-      const primaryBalance = await walletSDK.getPrimaryBalance();
+      const response = await walletSDK.getWallets(authContext.user.id);
+      const wallets = response.data.wallets;
+      const primary = wallets.find(w => w.is_primary);
+      let primaryBalance: WalletBalance | null = null;
+      if (primary) {
+        const balanceResponse = await walletSDK.getBalance(primary.id);
+        primaryBalance = balanceResponse.data.wallet;
+      }
       setState({ wallets, primaryBalance, isLoading: false, error: null });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch wallets';
       setState(prev => ({ ...prev, isLoading: false, error: message }));
     }
-  }, [authContext.isAuthenticated, walletSDK]);
+  }, [authContext.isAuthenticated, authContext.user, walletSDK]);
 
-  const getTransactions = useCallback(async (walletId: string, options?: TransactionHistoryOptions): Promise<PaginatedResponse<Transaction>> => {
+  const getTransactions = useCallback(async (walletId: string, options?: TransactionHistoryOptions): Promise<WalletTransactionsResponse> => {
     return walletSDK.getTransactions(walletId, options);
   }, [walletSDK]);
 

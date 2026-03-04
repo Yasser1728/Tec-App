@@ -6,6 +6,7 @@ export { TecAuthProvider, TecAuthContext } from './auth/provider';
 
 // Wallet
 export { TecWalletSDK } from './wallet';
+export type { WalletListResponse, WalletBalanceResponse, WalletTransactionsResponse, WalletOperationResponse, LinkWalletResponse, TransferResponse } from './wallet';
 export { useTecWallet } from './wallet/hooks';
 
 // Payment

@@ -262,3 +262,29 @@ export interface TransactionHistoryOptions {
   type?: 'deposit' | 'withdrawal' | 'transfer' | 'payment';
   status?: 'pending' | 'completed' | 'failed';
 }
+
+// ===== Payment History Types =====
+export interface PaymentHistoryOptions {
+  page?: number;
+  limit?: number;
+  status?: 'created' | 'approved' | 'completed' | 'cancelled' | 'failed';
+  payment_method?: 'pi' | 'card' | 'wallet';
+  from?: string; // ISO date string
+  to?: string;   // ISO date string
+  sort?: 'asc' | 'desc';
+}
+
+export interface PaginatedPaymentHistory {
+  success: boolean;
+  data: {
+    payments: Payment[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  };
+}
