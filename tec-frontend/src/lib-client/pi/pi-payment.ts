@@ -19,7 +19,7 @@ export interface PaymentResult {
   success: boolean;
   paymentId?: string;
   txid?: string;
-  status: 'pending' | 'approved' | 'completed' | 'cancelled' | 'failed';
+  status: 'pending' | 'approved' | 'completed' | 'cancelled' | 'failed' | 'error';
   amount: number;
   memo: string;
   message?: string;
@@ -75,15 +75,18 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
 
   try {
     // [source: Core-Backend]
-    const response = await retryFetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/a2u`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        'Idempotency-Key': idempotencyKey,
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await retryFetch(
+      `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/payments/a2u`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: JSON.stringify(data),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Unknown error' }));
@@ -180,6 +183,21 @@ export const createU2APayment = async (
   } else {
     console.warn('[Pi Payment] No stored userId — skipping backend payment record creation');
     onDiagnostic?.('warn', 'No userId available — skipping backend payment record creation');
+  }
+
+  // If we had a userId but failed to create a backend record, do NOT proceed
+  // with Pi.createPayment() — funds would be deducted without tracking.
+  if (userId && !internalId) {
+    const errorMsg =
+      'فشل إنشاء سجل الدفع — يُرجى المحاولة لاحقاً / Failed to create payment record — please try again later';
+    onDiagnostic?.('error', errorMsg);
+    return {
+      success: false,
+      status: 'error' as const,
+      amount,
+      memo,
+      message: errorMsg,
+    };
   }
 
   return new Promise((resolve, reject) => {

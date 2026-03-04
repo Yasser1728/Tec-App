@@ -41,22 +41,20 @@ describe('pi-payment - Idempotency-Key header', () => {
 
   describe('createA2UPayment', () => {
     it('sends Idempotency-Key header in /payments/a2u request', async () => {
-      const fetchSpy = vi
-        .spyOn(globalThis, 'fetch')
-        .mockResolvedValue(
-          makeOkResponse({
-            success: true,
-            status: 'pending',
-            amount: 10,
-            memo: 'test',
-          }) as unknown as Response
-        );
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeOkResponse({
+          success: true,
+          status: 'pending',
+          amount: 10,
+          memo: 'test',
+        }) as unknown as Response
+      );
 
       await createA2UPayment({ recipientUid: 'uid-123', amount: 10, memo: 'test' });
 
       expect(fetchSpy).toHaveBeenCalledOnce();
       const [url, options] = fetchSpy.mock.calls[0];
-      expect(url).toContain('/payments/a2u');
+      expect(url).toContain('/api/payments/a2u');
       expect((options?.headers as Record<string, string>)['Idempotency-Key']).toBe(TEST_UUID);
     });
   });
@@ -159,6 +157,29 @@ describe('pi-payment - Idempotency-Key header', () => {
       expect(completeKey).toBe(TEST_UUID);
       // Same key reused across approve and complete
       expect(approveKey).toBe(completeKey);
+    });
+
+    it('returns failure without calling Pi.createPayment when userId is set but backend record creation fails', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ error: { message: 'Internal Server Error' } }),
+      } as unknown as Response);
+
+      const mockCreatePayment = vi.fn();
+      (window as unknown as Record<string, unknown>).__TEC_PI_READY = true;
+      (window as unknown as Record<string, unknown>).Pi = {
+        createPayment: mockCreatePayment,
+        authenticate: vi.fn(),
+        init: vi.fn(),
+      };
+
+      const result = await createU2APayment(1, 'Test');
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe('error');
+      expect(result.message).toContain('Failed to create payment record');
+      expect(mockCreatePayment).not.toHaveBeenCalled();
     });
 
     it('E2E: create => approve => complete completes without 400 (missing-header) error', async () => {
