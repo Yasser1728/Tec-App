@@ -8,63 +8,62 @@ interface PiSdkLoaderProps {
 }
 
 /**
- * Client component that initialises the Pi SDK once it loads.
- * Replaces the dangerouslySetInnerHTML inline script in layout.tsx,
- * removing the need for `unsafe-inline` in script-src CSP.
+ * Polls for window.Pi (set by pi-sdk.js) then calls Pi.init().
+ * Fires 'tec-pi-ready' on success or 'tec-pi-error' on failure/timeout.
  */
 export default function PiSdkLoader({ sandbox, timeout }: PiSdkLoaderProps) {
   useEffect(() => {
-    const MAX_WAIT = timeout;
-    const POLL_INTERVAL = 200;
+    // Guard against double-init (React strict-mode / hot-reload)
+    if (window.__TEC_PI_READY || window.__TEC_PI_ERROR) return;
+
+    const POLL_INTERVAL = 250;
     const startTime = Date.now();
 
-    function initPi() {
-      if (typeof window.Pi !== 'undefined') {
-        try {
-          const elapsed = Date.now() - startTime;
-          console.log(`[TEC] Pi SDK loaded after ${elapsed}ms`);
+    function tryInit(): boolean {
+      if (typeof window.Pi === 'undefined') return false;
 
-          const appId = process.env.NEXT_PUBLIC_PI_APP_ID;
-          if (!appId) {
-            console.warn('[TEC] NEXT_PUBLIC_PI_APP_ID is not set — Pi.init() will run without appId');
-          }
-          window.Pi.init({ version: '2.0', sandbox, appId });
+      try {
+        const elapsed = Date.now() - startTime;
+        console.log(`[TEC] Pi SDK detected after ${elapsed}ms, calling Pi.init()`);
 
-          console.log(`[TEC] Pi SDK initialized (sandbox: ${sandbox})`);
-          window.__TEC_PI_READY = true;
-          window.dispatchEvent(new Event('tec-pi-ready'));
-        } catch (e) {
-          console.error('[TEC] Pi.init() failed:', e);
-          window.__TEC_PI_ERROR = true;
-          window.dispatchEvent(new CustomEvent('tec-pi-error', { detail: e }));
+        const appId = process.env.NEXT_PUBLIC_PI_APP_ID;
+        if (!appId) {
+          console.warn('[TEC] NEXT_PUBLIC_PI_APP_ID is not set — Pi.init() may fail');
         }
+
+        window.Pi.init({ version: '2.0', sandbox, ...(appId ? { appId } : {}) });
+
+        console.log(`[TEC] Pi SDK initialized (sandbox: ${sandbox})`);
+        window.__TEC_PI_READY = true;
+        window.dispatchEvent(new Event('tec-pi-ready'));
+        return true;
+      } catch (e) {
+        console.error('[TEC] Pi.init() failed:', e);
+        window.__TEC_PI_ERROR = true;
+        window.dispatchEvent(new CustomEvent('tec-pi-error', { detail: e }));
+        return true; // stop polling
       }
     }
 
-    if (typeof window.Pi !== 'undefined') {
-      initPi();
-    } else {
-      let elapsed = 0;
-      const poll = setInterval(() => {
-        elapsed += POLL_INTERVAL;
-        if (typeof window.Pi !== 'undefined') {
-          clearInterval(poll);
-          initPi();
-        } else if (elapsed >= MAX_WAIT) {
-          clearInterval(poll);
-          const totalElapsed = Date.now() - startTime;
-          console.error(
-            `[TEC] Pi SDK not available after ${totalElapsed}ms (timeout: ${MAX_WAIT}ms)`
-          );
-          window.__TEC_PI_ERROR = true;
-          window.dispatchEvent(
-            new CustomEvent('tec-pi-error', { detail: { message: 'SDK load timeout' } })
-          );
-        }
-      }, POLL_INTERVAL);
+    // SDK might already be loaded (beforeInteractive script)
+    if (tryInit()) return;
 
-      return () => clearInterval(poll);
-    }
+    const poll = setInterval(() => {
+      if (tryInit()) {
+        clearInterval(poll);
+        return;
+      }
+      if (Date.now() - startTime >= timeout) {
+        clearInterval(poll);
+        console.error(`[TEC] Pi SDK not available after ${timeout}ms`);
+        window.__TEC_PI_ERROR = true;
+        window.dispatchEvent(
+          new CustomEvent('tec-pi-error', { detail: { message: 'SDK load timeout' } })
+        );
+      }
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(poll);
   }, [sandbox, timeout]);
 
   return null;

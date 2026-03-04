@@ -1,5 +1,5 @@
 import './globals.css';
-import { headers } from 'next/headers';
+import Script from 'next/script';
 import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
 import { ClientProviders } from '@/components/ClientProviders';
 import PiSdkLoader from '@/components/PiSdkLoader';
@@ -26,25 +26,17 @@ export const metadata = {
 };
 
 const piSandbox = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false';
-// SDK timeout: configurable via env var, default 25 seconds (increased from 15s to handle slow networks)
-// Environment variable is resolved at build time, validated to be a positive number
 const sdkTimeoutEnv = process.env.NEXT_PUBLIC_PI_SDK_TIMEOUT
   ? parseInt(process.env.NEXT_PUBLIC_PI_SDK_TIMEOUT, 10)
   : 25000;
-const sdkTimeout = sdkTimeoutEnv > 0 && sdkTimeoutEnv < 120000 ? sdkTimeoutEnv : 25000; // Cap at 2 minutes for safety
+const sdkTimeout = sdkTimeoutEnv > 0 && sdkTimeoutEnv < 120000 ? sdkTimeoutEnv : 25000;
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const headersList = await headers();
-  const nonce = headersList.get('x-nonce') ?? '';
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" dir="ltr" className={`${cormorantGaramond.variable} ${dmSans.variable}`}>
-      <head>
-        {/* External SDK script — allowed by CSP without unsafe-inline */}
-        <script src="https://sdk.minepi.com/pi-sdk.js" defer nonce={nonce || undefined} />
-      </head>
       <body>
-        {/* PiSdkLoader replaces the dangerouslySetInnerHTML inline init script */}
+        {/* Load Pi SDK before hydration so window.Pi is available to PiSdkLoader */}
+        <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
         <PiSdkLoader sandbox={piSandbox} timeout={sdkTimeout} />
         <BackendOfflineBanner />
         <ClientProviders>{children}</ClientProviders>
