@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
     // nonce covers Next.js inline hydration scripts; unsafe-eval is NOT included.
     // https://sdk.minepi.com is the only external script host required by the Pi SDK.
     `script-src 'self' 'nonce-${nonce}' https://sdk.minepi.com`,
-    "connect-src 'self' https://sdk.minepi.com https://api.minepi.com https://*.minepi.com https://socialapis.pi",
+    "connect-src 'self' https://sdk.minepi.com https://api.minepi.com https://api.sandbox.minepi.com https://*.minepi.com https://socialapis.pi https://*.up.railway.app",
     "img-src 'self' data: https:",
     // unsafe-inline is required for style-src because Next.js App Router injects
     // inline <style> tags during SSR hydration. This cannot be removed without
@@ -39,14 +39,8 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PUT, DELETE, OPTIONS'
-  );
-  response.headers.set(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization'
-  );
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   response.headers.set('Cross-Origin-Opener-Policy', 'unsafe-none');
   response.headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
   response.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');

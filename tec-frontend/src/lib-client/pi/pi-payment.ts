@@ -90,7 +90,9 @@ export const createA2UPayment = async (data: A2UPaymentRequest): Promise<Payment
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-      throw new Error(error.message || 'فشل إنشاء الدفعة / Failed to create payment');
+      throw new Error(
+        error?.error?.message || error?.message || 'فشل إنشاء الدفعة / Failed to create payment'
+      );
     }
 
     return response.json();
@@ -324,7 +326,10 @@ export const createU2APayment = async (
 
             if (!res.ok) {
               const errorData = await res.json().catch(() => ({ message: 'Approval failed' }));
-              const errorMsg = errorData.message || 'فشلت الموافقة / Approval failed';
+              const errorMsg =
+                errorData?.error?.message ||
+                errorData?.message ||
+                'فشلت الموافقة / Approval failed';
               console.error('[Pi Payment] Server approval failed:', errorMsg);
               console.warn('[Pi Payment] Incomplete payment may remain:', piPaymentId);
               onDiagnostic?.('error', `Server approval failed: ${errorMsg}`, {
@@ -436,7 +441,10 @@ export const createU2APayment = async (
 
             if (!res.ok) {
               const errorData = await res.json().catch(() => ({ message: 'Completion failed' }));
-              const errorMsg = errorData.message || 'فشل الإكمال / Completion failed';
+              const errorMsg =
+                errorData?.error?.message ||
+                errorData?.message ||
+                'فشل الإكمال / Completion failed';
               console.error('[Pi Payment] Server completion failed:', errorMsg);
               onDiagnostic?.('error', `Server completion failed: ${errorMsg}`, {
                 piPaymentId,
@@ -520,7 +528,11 @@ export const getPaymentStatus = async (paymentId: string): Promise<PaymentResult
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-      throw new Error(error.message || 'فشل جلب حالة الدفعة / Failed to fetch payment status');
+      throw new Error(
+        error?.error?.message ||
+          error?.message ||
+          'فشل جلب حالة الدفعة / Failed to fetch payment status'
+      );
     }
 
     return response.json();
