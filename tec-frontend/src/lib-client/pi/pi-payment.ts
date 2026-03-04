@@ -143,7 +143,7 @@ export const createU2APayment = async (
       );
       console.log('[Pi Payment] Creating backend payment record for userId:', userId);
       const createRes = await retryFetch(
-        `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/create`,
+        `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/payments/create`,
         {
           method: 'POST',
           headers: {
@@ -273,12 +273,12 @@ export const createU2APayment = async (
 
           if (!internalId) {
             // No backend record — approve step will fail validation; log and skip
-            console.warn(
-              '[Pi Payment] No internalId — cannot call /payments/approve (backend record not created)'
+            console.error(
+              '[Pi Payment] No internalId — cannot call /payments/approve (backend record not created); payment will not be reconcilable'
             );
             onDiagnostic?.(
-              'warn',
-              'Skipping /payments/approve — no backend payment record (internalId missing)',
+              'error',
+              'Skipping /payments/approve — no backend payment record (internalId missing); payment may not be reconcilable',
               { piPaymentId }
             );
             startCompletionTimer();
@@ -292,7 +292,7 @@ export const createU2APayment = async (
             });
             // [source: Core-Backend]
             const res = await retryFetch(
-              `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/approve`,
+              `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/payments/approve`,
               {
                 method: 'POST',
                 headers: {
@@ -385,13 +385,14 @@ export const createU2APayment = async (
             );
             clearPaymentTimer();
             resolve({
-              success: true,
+              success: false,
               paymentId: piPaymentId,
               txid,
               status: 'completed',
               amount,
               memo,
-              message: 'تمت الدفعة بنجاح! 🎉 / Payment successful! 🎉',
+              message:
+                'تمت الدفعة لكن لم يتم تسجيلها — يرجى التواصل مع الدعم / Payment sent but not recorded — please contact support',
             });
             return;
           }
@@ -403,7 +404,7 @@ export const createU2APayment = async (
             });
             // [source: Core-Backend]
             const res = await retryFetch(
-              `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/complete`,
+              `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/payments/complete`,
               {
                 method: 'POST',
                 headers: {
@@ -491,7 +492,7 @@ export const getPaymentStatus = async (paymentId: string): Promise<PaymentResult
     // [source: Core-Backend]
     const token = getAccessToken();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/payments/${encodeURIComponent(paymentId)}/status`,
+      `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/payments/${encodeURIComponent(paymentId)}/status`,
       {
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),

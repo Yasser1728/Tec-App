@@ -22,7 +22,8 @@ vi.mock('@/lib-client/pi/payment-timeouts', () => ({
 
 import { createA2UPayment, createU2APayment } from '@/lib-client/pi/pi-payment';
 
-const TEST_UUID = 'test-uuid-1234-5678-abcd-ef0123456789' as `${string}-${string}-${string}-${string}-${string}`;
+const TEST_UUID =
+  'test-uuid-1234-5678-abcd-ef0123456789' as `${string}-${string}-${string}-${string}-${string}`;
 
 const makeOkResponse = (body: unknown) => ({
   ok: true,
@@ -40,9 +41,16 @@ describe('pi-payment - Idempotency-Key header', () => {
 
   describe('createA2UPayment', () => {
     it('sends Idempotency-Key header in /payments/a2u request', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        makeOkResponse({ success: true, status: 'pending', amount: 10, memo: 'test' }) as unknown as Response
-      );
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          makeOkResponse({
+            success: true,
+            status: 'pending',
+            amount: 10,
+            memo: 'test',
+          }) as unknown as Response
+        );
 
       await createA2UPayment({ recipientUid: 'uid-123', amount: 10, memo: 'test' });
 
@@ -55,9 +63,11 @@ describe('pi-payment - Idempotency-Key header', () => {
 
   describe('createU2APayment', () => {
     it('sends Idempotency-Key header in /payments/create request', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        makeOkResponse({ data: { payment: { id: 'internal-id' } } }) as unknown as Response
-      );
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          makeOkResponse({ data: { payment: { id: 'internal-id' } } }) as unknown as Response
+        );
 
       // Set up window.Pi so the function does not reject before calling fetch
       (window as unknown as Record<string, unknown>).__TEC_PI_READY = true;
@@ -74,7 +84,9 @@ describe('pi-payment - Idempotency-Key header', () => {
       // Wait until Pi.createPayment has been called (create fetch has completed)
       await vi.waitFor(() => expect(mockCreatePayment).toHaveBeenCalled());
 
-      const createCall = fetchSpy.mock.calls.find(([url]) => String(url).includes('/payments/create'));
+      const createCall = fetchSpy.mock.calls.find(([url]) =>
+        String(url).includes('/api/payments/create')
+      );
       expect(createCall).toBeDefined();
       const headers = createCall![1]?.headers as Record<string, string>;
       expect(headers['Idempotency-Key']).toBe(TEST_UUID);
@@ -88,17 +100,25 @@ describe('pi-payment - Idempotency-Key header', () => {
     it('sends the same Idempotency-Key in /payments/approve and /payments/complete', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
         const urlStr = String(url);
-        if (urlStr.includes('/payments/create')) {
-          return Promise.resolve(makeOkResponse({ data: { payment: { id: 'internal-id' } } }) as unknown as Response);
+        if (urlStr.includes('/api/payments/create')) {
+          return Promise.resolve(
+            makeOkResponse({ data: { payment: { id: 'internal-id' } } }) as unknown as Response
+          );
         }
-        if (urlStr.includes('/payments/approve')) {
+        if (urlStr.includes('/api/payments/approve')) {
           return Promise.resolve(makeOkResponse({ success: true }) as unknown as Response);
         }
-        if (urlStr.includes('/payments/complete')) {
-          return Promise.resolve(makeOkResponse({
-            success: true, paymentId: 'pi-pay-1', txid: 'txid-abc12345',
-            status: 'completed', amount: 1, memo: 'Test',
-          }) as unknown as Response);
+        if (urlStr.includes('/api/payments/complete')) {
+          return Promise.resolve(
+            makeOkResponse({
+              success: true,
+              paymentId: 'pi-pay-1',
+              txid: 'txid-abc12345',
+              status: 'completed',
+              amount: 1,
+              memo: 'Test',
+            }) as unknown as Response
+          );
         }
         return Promise.resolve(makeOkResponse({}) as unknown as Response);
       });
@@ -122,8 +142,12 @@ describe('pi-payment - Idempotency-Key header', () => {
       await callbacks.onReadyForServerCompletion('pi-pay-1', 'txid-abc12345');
       await paymentPromise;
 
-      const approveCall = fetchSpy.mock.calls.find(([url]) => String(url).includes('/payments/approve'));
-      const completeCall = fetchSpy.mock.calls.find(([url]) => String(url).includes('/payments/complete'));
+      const approveCall = fetchSpy.mock.calls.find(([url]) =>
+        String(url).includes('/api/payments/approve')
+      );
+      const completeCall = fetchSpy.mock.calls.find(([url]) =>
+        String(url).includes('/api/payments/complete')
+      );
 
       expect(approveCall).toBeDefined();
       expect(completeCall).toBeDefined();
@@ -144,21 +168,30 @@ describe('pi-payment - Idempotency-Key header', () => {
         const headers = (options?.headers ?? {}) as Record<string, string>;
         if (!headers['Idempotency-Key']) {
           return Promise.resolve({
-            ok: false, status: 400,
+            ok: false,
+            status: 400,
             json: () => Promise.resolve({ message: 'Missing Idempotency-Key' }),
           } as unknown as Response);
         }
-        if (urlStr.includes('/payments/create')) {
-          return Promise.resolve(makeOkResponse({ data: { payment: { id: 'e2e-id' } } }) as unknown as Response);
+        if (urlStr.includes('/api/payments/create')) {
+          return Promise.resolve(
+            makeOkResponse({ data: { payment: { id: 'e2e-id' } } }) as unknown as Response
+          );
         }
-        if (urlStr.includes('/payments/approve')) {
+        if (urlStr.includes('/api/payments/approve')) {
           return Promise.resolve(makeOkResponse({ success: true }) as unknown as Response);
         }
-        if (urlStr.includes('/payments/complete')) {
-          return Promise.resolve(makeOkResponse({
-            success: true, paymentId: 'pi-e2e', txid: 'txid-e2e12345',
-            status: 'completed', amount: 1, memo: 'E2E Test',
-          }) as unknown as Response);
+        if (urlStr.includes('/api/payments/complete')) {
+          return Promise.resolve(
+            makeOkResponse({
+              success: true,
+              paymentId: 'pi-e2e',
+              txid: 'txid-e2e12345',
+              status: 'completed',
+              amount: 1,
+              memo: 'E2E Test',
+            }) as unknown as Response
+          );
         }
         return Promise.resolve(makeOkResponse({}) as unknown as Response);
       });
@@ -187,10 +220,11 @@ describe('pi-payment - Idempotency-Key header', () => {
       expect(result.status).toBe('completed');
 
       // Every payment POST had the Idempotency-Key header
-      const paymentCalls = fetchSpy.mock.calls.filter(([url]) =>
-        String(url).includes('/payments/create') ||
-        String(url).includes('/payments/approve') ||
-        String(url).includes('/payments/complete')
+      const paymentCalls = fetchSpy.mock.calls.filter(
+        ([url]) =>
+          String(url).includes('/api/payments/create') ||
+          String(url).includes('/api/payments/approve') ||
+          String(url).includes('/api/payments/complete')
       );
       expect(paymentCalls).toHaveLength(3);
       for (const [, options] of paymentCalls) {
