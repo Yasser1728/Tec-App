@@ -29,11 +29,13 @@ export default function PiSdkLoader({ sandbox, timeout }: PiSdkLoaderProps) {
         const appId = process.env.NEXT_PUBLIC_PI_APP_ID;
         if (!appId) {
           console.warn('[TEC] NEXT_PUBLIC_PI_APP_ID is not set — Pi.init() may fail');
+        } else {
+          console.log(`[TEC] Using Pi App ID: ${appId}`);
         }
 
         window.Pi.init({ version: '2.0', sandbox, ...(appId ? { appId } : {}) });
 
-        console.log(`[TEC] Pi SDK initialized (sandbox: ${sandbox})`);
+        console.log(`[TEC] Pi SDK initialized (sandbox: ${sandbox}, appId: ${appId ?? 'not set'})`);
         window.__TEC_PI_READY = true;
         window.dispatchEvent(new Event('tec-pi-ready'));
         return true;

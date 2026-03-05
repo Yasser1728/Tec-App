@@ -62,7 +62,7 @@ export JWT_REFRESH_SECRET="your_refresh_secret_key_min_32_chars"
 
 # Pi Network integration (required for payment processing)
 export PI_API_KEY="your_pi_network_api_key"      # from https://developers.minepi.com
-export PI_APP_ID="your_pi_app_id"                # from https://developers.minepi.com
+export PI_APP_ID="tec-app-de161fa2243c797b"        # from https://developers.minepi.com
 
 # Environment (sandbox = testnet, production = mainnet)
 export PI_SANDBOX="true"                         # 'false' for Mainnet/Production
@@ -99,18 +99,18 @@ docker-compose up -d
 
 | Item | Value |
 |------|-------|
-| Pi App ID | `your-pi-app-id` (from Pi Developer Portal) |
-| Pi Sandbox App URL | `https://sandbox.minepi.com/app/your-pi-app-id` |
+| Pi App ID | `tec-app-de161fa2243c797b` |
+| Pi Sandbox App URL | `https://sandbox.minepi.com/app/tec-app-de161fa2243c797b` |
 
 **Allowed domains (configure in Pi Developer Portal):**
 - `https://tec-app.vercel.app`
-- `https://sandbox.minepi.com/app/your-pi-app-id`
+- `https://sandbox.minepi.com/app/tec-app-de161fa2243c797b`
 - `https://api-gateway-production-6a68.up.railway.app`
 
 **Frontend environment variables (`tec-frontend/.env.local`):**
 ```
-NEXT_PUBLIC_PI_APP_ID=your-pi-app-id
-NEXT_PUBLIC_PI_APP_URL=https://sandbox.minepi.com/app/your-pi-app-id
+NEXT_PUBLIC_PI_APP_ID=tec-app-de161fa2243c797b
+NEXT_PUBLIC_PI_APP_URL=https://sandbox.minepi.com/app/tec-app-de161fa2243c797b
 NEXT_PUBLIC_PI_SANDBOX=true
 NEXT_PUBLIC_API_GATEWAY_URL=https://api-gateway-production-6a68.up.railway.app
 # NEXT_PUBLIC_PI_SDK_TIMEOUT=35000   # increase for slow networks
@@ -118,7 +118,7 @@ NEXT_PUBLIC_API_GATEWAY_URL=https://api-gateway-production-6a68.up.railway.app
 
 **Backend environment variables (`.env`):**
 ```
-PI_APP_ID=your-pi-app-id
+PI_APP_ID=tec-app-de161fa2243c797b
 PI_SANDBOX=true
 PI_API_KEY=                          # obtain from https://developers.minepi.com
 PI_TEST_WALLET=                      # your test wallet address
