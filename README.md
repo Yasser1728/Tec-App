@@ -62,7 +62,7 @@ export JWT_REFRESH_SECRET="your_refresh_secret_key_min_32_chars"
 
 # Pi Network integration (required for payment processing)
 export PI_API_KEY="your_pi_network_api_key"      # from https://developers.minepi.com
-export PI_APP_ID="your_pi_app_id"                # from https://developers.minepi.com
+export PI_APP_ID="tec-app-de161fa2243c797b"        # from https://developers.minepi.com
 
 # Environment (sandbox = testnet, production = mainnet)
 export PI_SANDBOX="true"                         # 'false' for Mainnet/Production
