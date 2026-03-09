@@ -3,29 +3,28 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // Now expecting amount from the frontend
-    const { paymentId, amount } = body;
+    const { paymentId, amount, userId } = body;
 
     if (!paymentId || !amount) {
       return NextResponse.json({ error: 'Missing paymentId or amount' }, { status: 400 });
     }
 
-    // TODO: Replace with actual session user ID in Phase 9
-    const mockUserId = 'user_temp_12345';
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Call the core backend API Gateway
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendUrl = process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:8080';
 
-    const response = await fetch(`${backendUrl}/api/v1/payments/approve`, {
+    const response = await fetch(`${backendUrl}/api/payments/approve`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Backend now requires paymentId, amount, and userId
       body: JSON.stringify({
         paymentId,
         amount,
-        userId: mockUserId,
+        userId,
       }),
     });
 

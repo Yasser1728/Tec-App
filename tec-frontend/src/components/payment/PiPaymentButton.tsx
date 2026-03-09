@@ -3,12 +3,19 @@
 import { useState } from 'react';
 import { PiPaymentCallbacks, PaymentStatus } from '@/types/pi';
 
+type AuthStatus = 'idle' | 'connecting' | 'authenticated' | 'auth_failed';
+
 interface PiPaymentButtonProps {
   amount: number;
   memo: string;
   onSuccess?: (txid: string) => void;
   onError?: (errorMessage: string) => void;
 }
+
+// Handle incomplete payments from previous sessions
+const onIncompletePaymentFound = (payment: unknown) => {
+  console.warn('Incomplete payment found during connect:', payment);
+};
 
 export default function PiPaymentButton({
   amount,
@@ -17,6 +24,58 @@ export default function PiPaymentButton({
   onError,
 }: PiPaymentButtonProps) {
   const [status, setStatus] = useState<PaymentStatus | 'idle'>('idle');
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('idle');
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const handlePiConnect = async () => {
+    try {
+      setAuthStatus('connecting');
+
+      if (typeof window === 'undefined' || !(window as any).Pi) {
+        throw new Error('Pi Network SDK is not loaded.');
+      }
+
+      const scopes = ['payments', 'username'];
+      const authResult = await (window as any).Pi.authenticate(scopes, onIncompletePaymentFound);
+
+      console.log('Pi Auth Result:', authResult);
+
+      // Send to our Next.js auth route which proxies to the backend
+      const res = await fetch('/api/auth/pi-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authResult }),
+      });
+
+      const data = await res.json();
+
+      // Support both { token, user } and { tokens: { accessToken }, data: { user } } response shapes
+      const token = data.token ?? data.tokens?.accessToken ?? data.data?.tokens?.accessToken;
+      const user = data.user ?? data.data?.user;
+
+      if (token && user) {
+        try {
+          localStorage.setItem('tec_token', token);
+          localStorage.setItem('tec_user', JSON.stringify(user));
+        } catch (err) {
+          console.error('Failed to save auth data to localStorage:', err);
+          setAuthStatus('auth_failed');
+          if (onError)
+            onError('Failed to save session. Please disable private browsing mode and try again.');
+          return;
+        }
+        // user.id is from the existing backend format; user.piId is a normalised alias
+        setUserId(user.id ?? user.piId ?? null);
+        setAuthStatus('authenticated');
+      } else {
+        throw new Error(data.error || 'Authentication failed: no token received');
+      }
+    } catch (error: any) {
+      console.error('Pi Auth Error:', error);
+      setAuthStatus('auth_failed');
+      if (onError) onError(error.message || 'Pi authentication failed');
+    }
+  };
 
   const handlePayment = async () => {
     try {
@@ -35,8 +94,7 @@ export default function PiPaymentButton({
             const res = await fetch('/api/payment/approve', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              // Add the amount from component props here
-              body: JSON.stringify({ paymentId, amount }),
+              body: JSON.stringify({ paymentId, amount, userId }),
             });
             if (!res.ok) throw new Error('Approval failed on server');
           } catch (err) {
@@ -88,6 +146,24 @@ export default function PiPaymentButton({
       if (onError) onError(error.message || 'An unexpected error occurred.');
     }
   };
+
+  if (authStatus !== 'authenticated') {
+    return (
+      <button
+        onClick={handlePiConnect}
+        disabled={authStatus === 'connecting'}
+        className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center transition-colors disabled:opacity-50"
+      >
+        {authStatus === 'connecting' ? (
+          <span className="animate-pulse">Connecting...</span>
+        ) : authStatus === 'auth_failed' ? (
+          <span>Retry Connect with Pi</span>
+        ) : (
+          <span>Connect with Pi</span>
+        )}
+      </button>
+    );
+  }
 
   return (
     <button
