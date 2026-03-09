@@ -1,236 +1,153 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { PiPaymentCallbacks, PaymentStatus } from '@/types/pi';
+import { useState, useEffect, useCallback } from "react";
 
-type AuthStatus = 'idle' | 'connecting' | 'authenticated' | 'auth_failed';
-
-interface PiUser {
-  id?: string;
-  piId?: string;
-  username?: string;
-  piUsername?: string;
-  name?: string;
-}
-
-interface PiPaymentButtonProps {
-  amount: number;
-  memo: string;
-  onSuccess?: (txid: string) => void;
-  onError?: (errorMessage: string) => void;
-}
-
-// Handle incomplete payments from previous sessions
-const onIncompletePaymentFound = (payment: unknown) => {
-  console.warn('Incomplete payment found during connect:', payment);
-};
-
-// Delay (ms) before refreshing balance after a successful payment to allow
-// the backend wallet service time to process the transaction
-const BALANCE_REFRESH_DELAY_MS = 2500;
-
-export default function PiPaymentButton({
-  amount,
-  memo,
-  onSuccess,
-  onError,
-}: PiPaymentButtonProps) {
-  const [status, setStatus] = useState<PaymentStatus | 'idle'>('idle');
-  const [authStatus, setAuthStatus] = useState<AuthStatus>('idle');
-  const [userId, setUserId] = useState<string | null>(null);
-  const [user, setUser] = useState<PiUser | null>(null);
+export default function PiPaymentButton() {
+  const [status, setStatus] = useState("idle"); // idle, loading, paying, success, error
+  const [user, setUser] = useState<any>(null);
   const [balance, setBalance] = useState<number | null>(null);
-  const [balanceError, setBalanceError] = useState(false);
+  const [isPiBrowser, setIsPiBrowser] = useState(true);
 
-  const fetchBalance = async (uid: string) => {
+  // 1. دالة جلب الرصيد من الـ API
+  const fetchBalance = async (userId: string) => {
     try {
-      setBalanceError(false);
-      const res = await fetch(`/api/wallet/balance?userId=${uid}`);
+      const res = await fetch(`/api/wallet/balance?userId=${userId}`);
       const data = await res.json();
-      if (data.balance !== undefined) {
+      if (data && data.balance !== undefined) {
         setBalance(data.balance);
-      } else {
-        console.warn('Balance fetch returned unexpected data:', data);
-        setBalanceError(true);
       }
     } catch (err) {
-      console.error('Balance fetch error:', err);
-      setBalanceError(true);
+      console.error("Error fetching balance:", err);
     }
   };
 
-  const handlePiConnect = async () => {
-    try {
-      setAuthStatus('connecting');
+  // 2. تسجيل الدخول التلقائي (مثل LIFE-APP تماماً)
+  useEffect(() => {
+    const initPiAuth = async () => {
+      if (typeof window === 'undefined') return;
 
-      if (typeof window === 'undefined' || !(window as any).Pi) {
-        throw new Error('Pi Network SDK is not loaded.');
+      // التأكد أن المستخدم يفتح من متصفح Pi
+      if (!window.Pi) {
+        setIsPiBrowser(false);
+        return;
       }
 
-      const scopes = ['payments', 'username'];
-      const authResult = await (window as any).Pi.authenticate(scopes, onIncompletePaymentFound);
-
-      console.log('Pi Auth Result:', authResult);
-
-      // Send to our Next.js auth route which proxies to the backend
-      const res = await fetch('/api/auth/pi-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ authResult }),
-      });
-
-      const data = await res.json();
-
-      // Support both { token, user } and { tokens: { accessToken }, data: { user } } response shapes
-      const token = data.token ?? data.tokens?.accessToken ?? data.data?.tokens?.accessToken;
-      const user = data.user ?? data.data?.user;
-
-      if (token && user) {
-        try {
-          localStorage.setItem('tec_token', token);
-          localStorage.setItem('tec_user', JSON.stringify(user));
-        } catch (err) {
-          console.error('Failed to save auth data to localStorage:', err);
-          setAuthStatus('auth_failed');
-          if (onError)
-            onError('Failed to save session. Please disable private browsing mode and try again.');
-          return;
+      try {
+        setStatus("loading");
+        const scopes = ['payments', 'username'];
+        
+        // تسجيل الدخول صامتاً في الخلفية
+        // @ts-ignore
+        const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
+        
+        if (authResult?.user?.uid) {
+          // إرسال البيانات للباك-إند الخاص بنا
+          const res = await fetch('/api/auth/pi-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ authResult }),
+          });
+          
+          const data = await res.json();
+          if (data.token) {
+            setUser(data.user);
+            setStatus("idle"); // جاهز للدفع
+            fetchBalance(data.user.piUid); // جلب الرصيد
+          }
         }
-        // user.id is from the existing backend format; user.piId is a normalised alias
-        const uid = user.id ?? user.piId ?? null;
-        setUserId(uid);
-        setUser(user);
-        setAuthStatus('authenticated');
-        if (uid) fetchBalance(uid);
-      } else {
-        throw new Error(data.error || 'Authentication failed: no token received');
+      } catch (error) {
+        console.error("Pi Auth Error:", error);
+        setStatus("error");
       }
-    } catch (error: any) {
-      console.error('Pi Auth Error:', error);
-      setAuthStatus('auth_failed');
-      if (onError) onError(error.message || 'Pi authentication failed');
-    }
-  };
+    };
 
-  const handlePayment = async () => {
+    initPiAuth();
+  }, []);
+
+  // 3. دالة الدفع (الزر الوحيد)
+  const handlePayment = useCallback(async () => {
+    if (!user) return alert("Please wait for authentication...");
+    
     try {
-      setStatus('pending');
-
-      if (typeof window === 'undefined' || !(window as any).Pi) {
-        throw new Error('Pi Network SDK is not loaded.');
-      }
-
-      const Pi = (window as any).Pi;
-
-      const callbacks: PiPaymentCallbacks = {
-        onReadyForServerApproval: async (paymentId) => {
-          console.log('Ready for server approval:', paymentId);
-          try {
-            const res = await fetch('/api/payment/approve', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paymentId, amount, userId }),
-            });
-            if (!res.ok) throw new Error('Approval failed on server');
-          } catch (err) {
-            console.error(err);
-            setStatus('failed');
-            if (onError) onError('Server approval failed');
-          }
+      setStatus("paying");
+      // @ts-ignore
+      const payment = await window.Pi.createPayment({
+        amount: 1,
+        memo: "Purchase 0.1 TEC",
+        metadata: { userId: user.piUid }, // ID المستخدم الحقيقي
+      }, {
+        onReadyForServerApproval: (paymentId: string) => {
+          fetch('/api/payment/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId, amount: 1, userId: user.piUid })
+          });
         },
-        onReadyForServerCompletion: async (paymentId, txid) => {
-          console.log('Ready for server completion:', paymentId, txid);
-          try {
-            const res = await fetch('/api/payment/complete', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paymentId, txid }),
-            });
-            if (!res.ok) throw new Error('Completion failed on server');
-
-            setStatus('success');
-            if (onSuccess) onSuccess(txid);
-            // Refresh balance after a delay to allow backend processing
-            setTimeout(() => {
-              if (userId) fetchBalance(userId);
-            }, BALANCE_REFRESH_DELAY_MS);
-          } catch (err) {
-            console.error(err);
-            setStatus('failed');
-            if (onError) onError('Server completion failed');
-          }
+        onReadyForServerCompletion: (paymentId: string, txid: string) => {
+          fetch('/api/payment/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId, txid })
+          }).then(() => {
+            setStatus("success");
+            // تحديث الرصيد بعد نجاح الدفع
+            setTimeout(() => fetchBalance(user.piUid), 2000);
+          });
         },
-        onCancel: (paymentId) => {
-          console.log('Payment cancelled:', paymentId);
-          setStatus('cancelled');
-          if (onError) onError('Payment was cancelled by the user.');
-        },
-        onError: (error, payment) => {
-          console.error('Payment error:', error, payment);
-          setStatus('failed');
-          if (onError) onError(error.message);
-        },
-      };
-
-      await Pi.createPayment(
-        {
-          amount,
-          memo,
-          metadata: { orderId: '12345' },
-        },
-        callbacks
-      );
-    } catch (error: any) {
-      setStatus('failed');
-      if (onError) onError(error.message || 'An unexpected error occurred.');
+        onCancel: () => setStatus("idle"),
+        onError: () => setStatus("error"),
+      });
+    } catch (error) {
+      console.error(error);
+      setStatus("error");
     }
+  }, [user]);
+
+  const onIncompletePaymentFound = (payment: any) => {
+    console.warn("Incomplete payment found", payment);
   };
 
-  if (authStatus !== 'authenticated') {
+  // 4. الواجهة المبسطة
+  if (!isPiBrowser) {
     return (
-      <button
-        onClick={handlePiConnect}
-        disabled={authStatus === 'connecting'}
-        className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center transition-colors disabled:opacity-50"
-      >
-        {authStatus === 'connecting' ? (
-          <span className="animate-pulse">Connecting...</span>
-        ) : authStatus === 'auth_failed' ? (
-          <span>Retry Connect with Pi</span>
-        ) : (
-          <span>Connect with Pi</span>
-        )}
-      </button>
+      <div className="p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg text-center">
+        🌐 <strong>Pi Browser Required</strong><br/>
+        Please open this app inside the Pi Browser to authenticate and pay.
+      </div>
     );
   }
 
-  const username = user?.username ?? user?.piUsername ?? user?.name ?? 'User';
-
   return (
-    <div className="flex flex-col items-center gap-4 p-4 bg-purple-900 rounded-lg text-white w-full max-w-sm">
-      <p className="text-lg font-semibold">Welcome, {username} 👋</p>
-      <p className="text-sm text-purple-200">
-        Your Balance:{' '}
-        <span className="font-bold text-white">
-          {balanceError ? 'Unavailable' : balance !== null ? `${balance} TEC` : 'Loading...'}
-        </span>
-      </p>
-      <button
-        onClick={handlePayment}
-        disabled={status === 'pending'}
-        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center transition-colors disabled:opacity-50"
-      >
-        {status === 'pending' ? (
-          <span className="animate-pulse">Processing...</span>
-        ) : (
-          <span>Pay {amount} Pi</span>
-        )}
-      </button>
-      {status === 'success' && <p className="text-green-400 text-sm">✅ Payment successful!</p>}
-      {status === 'failed' && (
-        <p className="text-red-400 text-sm">❌ Payment failed. Please try again.</p>
+    <div className="flex flex-col items-center gap-4 p-6 bg-gray-900 rounded-xl text-white w-full max-w-md mx-auto">
+      {/* حالة التحميل المخفية */}
+      {status === "loading" && (
+        <p className="text-teal-400 animate-pulse">Authenticating with Pi...</p>
       )}
-      {status === 'cancelled' && <p className="text-yellow-400 text-sm">⚠️ Payment cancelled.</p>}
+
+      {/* لوحة التحكم والزر الوحيد (تظهر فقط بعد الـ Auth التلقائي) */}
+      {user && (
+        <div className="text-center w-full">
+          <h2 className="text-2xl font-bold text-teal-400 mb-2">Welcome, {user.username}!</h2>
+          <div className="bg-gray-800 p-4 rounded-lg my-4 border border-teal-500/30">
+            <p className="text-gray-400 text-sm">Your TEC Balance</p>
+            <p className="text-4xl font-black text-white">
+              {balance !== null ? balance : "..."} <span className="text-teal-400 text-xl">TEC</span>
+            </p>
+          </div>
+
+          <button 
+            onClick={handlePayment}
+            disabled={status === "paying"}
+            className="w-full bg-gradient-to-r from-pink-500 to-orange-400 text-white px-6 py-4 rounded-lg font-bold text-lg shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            {status === "paying" ? "Processing..." : "💎 Pay 1 Pi = 0.1 TEC"}
+          </button>
+          
+          {status === "success" && (
+            <p className="text-green-400 mt-3 font-semibold">Payment successful! Balance updated.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
