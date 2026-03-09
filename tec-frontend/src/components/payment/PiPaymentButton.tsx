@@ -31,13 +31,36 @@ export default function PiPaymentButton({
       const callbacks: PiPaymentCallbacks = {
         onReadyForServerApproval: async (paymentId) => {
           console.log("Ready for server approval:", paymentId);
-          // TODO: Call backend /api/payment/approve
+          try {
+            const res = await fetch('/api/payment/approve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId }),
+            });
+            if (!res.ok) throw new Error("Approval failed on server");
+          } catch (err) {
+            console.error(err);
+            setStatus("failed");
+            if (onError) onError("Server approval failed");
+          }
         },
         onReadyForServerCompletion: async (paymentId, txid) => {
           console.log("Ready for server completion:", paymentId, txid);
-          // TODO: Call backend /api/payment/complete
-          setStatus("success");
-          if (onSuccess) onSuccess(txid);
+          try {
+            const res = await fetch('/api/payment/complete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId, txid }),
+            });
+            if (!res.ok) throw new Error("Completion failed on server");
+
+            setStatus("success");
+            if (onSuccess) onSuccess(txid);
+          } catch (err) {
+            console.error(err);
+            setStatus("failed");
+            if (onError) onError("Server completion failed");
+          }
         },
         onCancel: (paymentId) => {
           console.log("Payment cancelled:", paymentId);
