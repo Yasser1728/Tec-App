@@ -10,40 +10,6 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-// ---- mock hooks so we can control their output ----
-vi.mock('@/lib-client/hooks/usePiAuth', () => ({
-  usePiAuth: () => ({
-    isAuthenticated: false,
-    isLoading: false,
-    error: null,
-    errorType: null,
-    user: null,
-    login: vi.fn(),
-    logout: vi.fn(),
-  }),
-}));
-
-vi.mock('@/lib-client/hooks/usePiPayment', () => ({
-  usePiPayment: () => ({
-    isProcessing: false,
-    lastPayment: null,
-    error: null,
-    errorType: null,
-    sdkAvailable: false,
-    payDemoPi: vi.fn(),
-    testSDK: vi.fn(),
-    resetPayment: vi.fn(),
-  }),
-}));
-
-vi.mock('@/lib-client/hooks/useDiagnostics', () => ({
-  useDiagnostics: () => ({
-    events: [],
-    addEvent: vi.fn(),
-    clearEvents: vi.fn(),
-  }),
-}));
-
 vi.mock('@/lib/i18n', () => ({
   useTranslation: () => ({
     t: {
@@ -83,16 +49,16 @@ vi.mock('@/components/LanguageSwitcher', () => ({
   default: () => null,
 }));
 
+// Mock PiPaymentButton so tests don't depend on window.Pi
+vi.mock('@/components/payment/PiPaymentButton', () => ({
+  default: () => <button>💎 Pay 1 Pi = 0.1 TEC</button>,
+}));
+
 import HomePage from '@/app/page';
 
 describe('HomePage', () => {
   it('renders without crashing', () => {
     render(<HomePage />);
-  });
-
-  it('shows the Connect with Pi button', () => {
-    render(<HomePage />);
-    expect(screen.getByRole('button', { name: /connect with pi/i })).toBeInTheDocument();
   });
 
   it('shows the app name in the hero heading', () => {
@@ -101,7 +67,7 @@ describe('HomePage', () => {
     expect(heading).toHaveTextContent('TEC App');
   });
 
-  it('shows the demo payment button', () => {
+  it('shows the single Pay 1 Pi payment button', () => {
     render(<HomePage />);
     expect(screen.getByRole('button', { name: /pay 1 pi/i })).toBeInTheDocument();
   });
