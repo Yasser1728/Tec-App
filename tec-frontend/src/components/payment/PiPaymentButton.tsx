@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useCallback } from "react";
+// نستخدم الدالة الأصلية الخاصة بمشروعك لضمان عدم وجود أخطاء في الـ Backend
+import { loginWithPi } from "@/lib-client/pi/pi-auth"; 
 
 export default function PiPaymentButton() {
   const [loading, setLoading] = useState(false);
-  const [a2uLoading, setA2ULoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [balance, setBalance] = useState<number | string>("...");
   const [statusMsg, setStatusMsg] = useState('');
 
+  // 1. جلب الرصيد
   const fetchBalance = async (userId: string) => {
     try {
       const res = await fetch(`/api/wallet/balance?userId=${userId}`);
+      if (!res.ok) return setBalance(0);
       const data = await res.json();
       if (data && data.balance !== undefined) {
         setBalance(data.balance);
@@ -23,65 +26,37 @@ export default function PiPaymentButton() {
     }
   };
 
+  // 2. تسجيل الدخول
   const handleAuth = async () => {
     try {
       setLoading(true);
       setStatusMsg('');
-      const scopes = ['payments', 'username'];
       
-      // @ts-ignore
-      const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
+      // نستخدم الدالة الأصلية في مشروعك اللي بتعرف تتعامل مع الـ 400 error
+      const authResponse = await loginWithPi();
       
-      if (!authResult?.accessToken) {
-         throw new Error("لم يتم الحصول على مصادقة من Pi");
-      }
-
-      // 💡 الحل الجذري: الاتصال بالباك إند المباشر (Gateway) المرفوع على Railway 
-      // بالصيغة الدقيقة اللي الباك إند متوقعها عشان نمنع خطأ 400 نهائياً
-      const backendUrl = process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'https://api-gateway-production-6a68.up.railway.app';
-      
-      const res = await fetch(`${backendUrl}/api/auth/pi-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          accessToken: authResult.accessToken,
-          piUsername: authResult.user.username,
-          piUid: authResult.user.uid
-        }),
-      });
-      
-      if (!res.ok) {
-         const errData = await res.json().catch(()=>({}));
-         throw new Error(errData.message || "فشل الاتصال بالخادم (Backend Error)");
-      }
-
-      const rawData = await res.json();
-      const userData = rawData.data?.user || rawData.user;
-      
-      if (userData) {
-        const safeUser = {
-          username: userData.piUsername || userData.username || authResult.user.username,
-          uid: userData.piUid || userData.piId || authResult.user.uid
-        };
-        setUser(safeUser);
-        fetchBalance(safeUser.uid);
-        setStatusMsg('');
-      } else {
-         throw new Error("صيغة البيانات غير صحيحة من الخادم");
+      if (authResponse && authResponse.user) {
+        const uid = authResponse.user.piId || authResponse.user.id || authResponse.user.piUid;
+        setUser({
+          username: authResponse.user.piUsername || authResponse.user.username || 'User',
+          uid: uid
+        });
+        fetchBalance(uid);
       }
     } catch (error: any) {
       console.error("Auth Error:", error);
-      setStatusMsg(error.message || 'فشل تسجيل الدخول.');
+      setStatusMsg(error.message || 'Failed to authenticate. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // 3. الدفع
   const handlePayment = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
-      setStatusMsg('جاري معالجة الدفع...');
+      setStatusMsg('Initiating payment...');
       // @ts-ignore
       await window.Pi.createPayment({
         amount: 1,
@@ -105,89 +80,65 @@ export default function PiPaymentButton() {
             setTimeout(() => fetchBalance(user.uid), 2000);
           });
         },
-        onCancel: () => setStatusMsg("تم إلغاء الدفع."),
-        onError: () => setStatusMsg("حدث خطأ أثناء الدفع."),
+        onCancel: () => setStatusMsg("Payment cancelled."),
+        onError: () => setStatusMsg("Payment error occurred."),
       });
     } catch (error) {
-      setStatusMsg("فشل الدفع.");
+      setStatusMsg("Payment failed.");
     } finally {
       setLoading(false);
     }
   }, [user]);
 
-  const handleA2UPayment = async () => {
-    setA2ULoading(true);
-    setStatusMsg('Initiating App-to-User payment...');
-    // وضعنا الزرار كشكل حالياً لتطابق لايف آب (سيتم برمجته لاحقاً)
-    setTimeout(() => {
-      setStatusMsg('A2U endpoint is ready to be linked!');
-      setA2ULoading(false);
-    }, 1500);
-  };
-
-  const onIncompletePaymentFound = (payment: any) => {
-    console.warn("Incomplete payment found", payment);
-  };
-
   return (
-    <div className="w-full flex flex-col items-center justify-center p-4">
-      {/* شلنا المربع الأبيض وخلينا العرض مناسب ومندمج مع الخلفية */}
-      <div className="w-full max-w-md text-center">
-        
-        {!user ? (
-          <>
-            {/* زرار واحد فقط للدخول (موف) */}
-            <button
-              onClick={handleAuth}
-              disabled={loading}
-              className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg text-lg border border-[#7C3AED]/30"
-            >
-              {loading ? 'Connecting...' : 'Connect Pi Wallet'}
-            </button>
-            {statusMsg && <p className="text-red-400 mt-4 font-semibold text-sm">{statusMsg}</p>}
-          </>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <p className="text-green-400 font-semibold text-lg">
-              Welcome, @{user.username}!
-            </p>
+    <div className="w-full max-w-sm mx-auto my-6 p-4">
+      {!user ? (
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleAuth}
+            disabled={loading}
+            className="w-full bg-[#1e1e1e] border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-semibold py-3 px-6 rounded-lg transition-all text-lg tracking-wide disabled:opacity-50"
+          >
+            {loading ? 'CONNECTING...' : 'CONNECT PI WALLET'}
+          </button>
+          {statusMsg && (
+            <p className="text-red-500 mt-4 text-sm text-center">{statusMsg}</p>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center w-full">
+          {/* بيانات المستخدم متناسقة مع تصميم TEC */}
+          <div className="w-full bg-[#1e1e1e] border border-[#333] rounded-lg p-5 mb-6">
+            <h3 className="text-[#d4af37] font-semibold text-lg mb-4 text-center">
+              WELCOME, @{user.username.toUpperCase()}
+            </h3>
             
-            {/* مربع شفاف وأنيق للبيانات عشان يليق على الخلفية الغامقة */}
-            <div className="bg-gray-800/40 p-4 rounded-xl text-sm text-left border border-gray-700/50 backdrop-blur-sm">
-              <p className="text-gray-400 mb-2">
-                <strong className="text-gray-200">UID:</strong> <span className="text-xs break-all">{user.uid}</span>
-              </p>
-              <p className="text-gray-400">
-                <strong className="text-gray-200">TEC Balance:</strong> <span className="font-bold text-lg text-[#8B5CF6] ml-1">{balance} TEC</span>
-              </p>
+            <div className="flex justify-between items-center mb-2 text-sm">
+              <span className="text-gray-400">UID:</span>
+              <span className="text-gray-200 ml-2 truncate w-32">{user.uid}</span>
             </div>
-
-            {/* الزرار الأول (الدفع) - أخضر */}
-            <button
-              onClick={handlePayment}
-              disabled={loading || a2uLoading}
-              className="w-full bg-[#10B981] hover:bg-[#059669] disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg text-lg border border-[#059669]/30"
-            >
-              {loading ? 'Processing...' : 'Pay 1 Pi = 0.1 TEC'}
-            </button>
-
-            {/* الزرار الثاني (الاستقبال A2U) - أزرق زي لايف آب */}
-            <button
-              onClick={handleA2UPayment}
-              disabled={loading || a2uLoading}
-              className="w-full bg-[#3B82F6] hover:bg-[#2563EB] disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg text-lg border border-[#2563EB]/30"
-            >
-              Receive 0.1 Test-Pi (A2U)
-            </button>
-
-            {statusMsg && (
-              <p className={`mt-2 text-sm font-semibold ${statusMsg.includes('نجاح') || statusMsg.includes('successful') ? 'text-green-400' : 'text-red-400'}`}>
-                {statusMsg}
-              </p>
-            )}
+            
+            <div className="flex justify-between items-center text-sm border-t border-[#333] pt-3 mt-3">
+              <span className="text-gray-400">TEC BALANCE:</span>
+              <span className="text-[#d4af37] font-bold text-xl">{balance} TEC</span>
+            </div>
           </div>
-        )}
-      </div>
+
+          <button
+            onClick={handlePayment}
+            disabled={loading}
+            className="w-full bg-[#d4af37] hover:bg-[#b89528] text-black font-bold py-3 px-6 rounded-lg transition-all text-lg shadow-lg disabled:opacity-50"
+          >
+            {loading ? 'PROCESSING...' : 'PAY 1 PI = 0.1 TEC'}
+          </button>
+
+          {statusMsg && (
+            <p className={`mt-4 text-sm text-center ${statusMsg.includes('successful') ? 'text-green-500' : 'text-gray-400'}`}>
+              {statusMsg}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
-        }
+}
