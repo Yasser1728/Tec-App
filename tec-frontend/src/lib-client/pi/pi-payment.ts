@@ -132,7 +132,7 @@ export const createU2APayment = async (
   // Step 1: Create backend payment record first (tec-ecosystem flow).
   // This gives us an internal UUID (internalId) which the approve/complete
   // endpoints require as payment_id. If creation fails (e.g. userId not yet
-  // a DB-linked UUID in testnet), we log a warning and fall back to using the
+  // a DB-linked UUID in sandbox), we log a warning and fall back to using the
   // Pi payment ID directly in the callbacks.
   let internalId: string | null = null;
   const storedUser = getStoredUser();
@@ -387,7 +387,7 @@ export const createU2APayment = async (
             return;
           }
 
-          // Validate txid format (accept Pi testnet/mainnet IDs without allowing path separators)
+          // Validate txid format (accept Pi Sandbox/mainnet IDs without allowing path separators)
           if (!PI_TXID_REGEX.test(txid)) {
             console.error('[Pi Payment] Invalid txid format:', txid);
             onDiagnostic?.('error', `Invalid txid format: ${txid}`, { txid });
@@ -423,7 +423,7 @@ export const createU2APayment = async (
           try {
             console.log('[Pi Payment] Calling /payments/complete:', {
               payment_id: internalId,
-              transaction_id: txid,
+              txid,
             });
             // [source: Core-Backend]
             const res = await retryFetch(
@@ -435,7 +435,7 @@ export const createU2APayment = async (
                   'Idempotency-Key': idempotencyKey,
                   ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify({ payment_id: internalId, transaction_id: txid }),
+                body: JSON.stringify({ payment_id: internalId, txid }),
               }
             );
 

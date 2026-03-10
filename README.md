@@ -64,7 +64,7 @@ export JWT_REFRESH_SECRET="your_refresh_secret_key_min_32_chars"
 export PI_API_KEY="your_pi_network_api_key"      # from https://developers.minepi.com
 export PI_APP_ID="tec-app-de161fa2243c797b"        # from https://developers.minepi.com
 
-# Environment (sandbox = testnet, production = mainnet)
+# Environment (sandbox = Pi Sandbox, production = mainnet)
 export PI_SANDBOX="true"                         # 'false' for Mainnet/Production
 export NEXT_PUBLIC_PI_SANDBOX="true"             # frontend counterpart
 
@@ -77,7 +77,7 @@ export CORS_ORIGIN="http://localhost:3000"
 > - **`DATABASE_URL`**: Required for payment processing. Automatically set by docker-compose from `POSTGRES_PASSWORD`.
 > - **`CORS_ORIGIN`**: Must match your frontend URL. Use `http://localhost:3000` for local development and your production URL (e.g., `https://tec-app.vercel.app`) in production.
 > - **`PI_API_KEY`** and **`PI_APP_ID`**: Required for Pi Network payment integration. Obtain both from [Pi Developer Portal](https://developers.minepi.com/).
-> - **`PI_SANDBOX`** / **`NEXT_PUBLIC_PI_SANDBOX`**: Set to `'true'` for Testnet (sandbox) and `'false'` for Mainnet (production).
+> - **`PI_SANDBOX`** / **`NEXT_PUBLIC_PI_SANDBOX`**: Set to `'true'` for Sandbox and `'false'` for Mainnet (production).
 >
 > If the payment service fails to start or returns database errors, verify these environment variables are correctly set.
 
@@ -416,8 +416,8 @@ docker-compose up -d
 ### Pi Network (Required for Payment Integration)
 - `PI_API_KEY` - Pi Network server-side API key (from [developers.minepi.com](https://developers.minepi.com))
 - `PI_APP_ID` - Pi App identifier (from [developers.minepi.com](https://developers.minepi.com))
-- `PI_SANDBOX` - `'true'` for Testnet (sandbox), `'false'` for Mainnet (production)
-- `NEXT_PUBLIC_PI_SANDBOX` - Frontend counterpart; `'true'` for Testnet
+- `PI_SANDBOX` - `'true'` for Sandbox, `'false'` for Mainnet (production)
+- `NEXT_PUBLIC_PI_SANDBOX` - Frontend counterpart; `'true'` for Sandbox
 
 ### Optional
 - `NODE_ENV` - Environment (development/production)

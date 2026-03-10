@@ -16,19 +16,19 @@ interface PaymentDiagnosticsProps {
   events: DiagnosticEvent[];
 }
 
-export default function PaymentDiagnostics({ 
-  isAuthenticated, 
+export default function PaymentDiagnostics({
+  isAuthenticated,
   username,
-  events 
+  events,
 }: PaymentDiagnosticsProps) {
   const [sdkReady, setSdkReady] = useState(false);
   const [sdkInitTime, setSdkInitTime] = useState<string | null>(null);
-  const [isTestnet, setIsTestnet] = useState(false);
+  const [isSandbox, setIsSandbox] = useState(false);
 
   useEffect(() => {
-    // Check if we're in testnet mode
-    const testnetMode = process.env.NEXT_PUBLIC_PI_SANDBOX === 'true';
-    setIsTestnet(testnetMode);
+    // Check if we're in sandbox mode
+    const sandboxMode = process.env.NEXT_PUBLIC_PI_SANDBOX === 'true';
+    setIsSandbox(sandboxMode);
 
     // Check SDK readiness
     const checkSDK = () => {
@@ -50,7 +50,7 @@ export default function PaymentDiagnostics({
     };
 
     window.addEventListener('tec-pi-ready', handlePiReady);
-    
+
     // Poll for SDK ready state
     const interval = setInterval(checkSDK, 1000);
 
@@ -60,29 +60,36 @@ export default function PaymentDiagnostics({
     };
   }, [sdkInitTime]);
 
-  // Only show diagnostics in testnet mode
-  if (!isTestnet) {
+  // Only show diagnostics in sandbox mode
+  if (!isSandbox) {
     return null;
   }
 
   const getEventIcon = (type: DiagnosticEvent['type']) => {
     switch (type) {
-      case 'sdk_init': return '🔧';
-      case 'auth': return '🔑';
-      case 'approval': return '✅';
-      case 'completion': return '✨';
-      case 'error': return '❌';
-      case 'cancel': return '⚠️';
-      default: return '📋';
+      case 'sdk_init':
+        return '🔧';
+      case 'auth':
+        return '🔑';
+      case 'approval':
+        return '✅';
+      case 'completion':
+        return '✨';
+      case 'error':
+        return '❌';
+      case 'cancel':
+        return '⚠️';
+      default:
+        return '📋';
     }
   };
 
   return (
     <div className={styles.diagnostics}>
       <div className={styles.header}>
-        <h3 className={styles.title}>🔍 Payment Diagnostics (Testnet Only)</h3>
+        <h3 className={styles.title}>🔍 Payment Diagnostics (Sandbox Only)</h3>
       </div>
-      
+
       <div className={styles.statusGrid}>
         <div className={styles.statusItem}>
           <span className={styles.statusLabel}>Pi SDK:</span>
@@ -90,24 +97,22 @@ export default function PaymentDiagnostics({
             {sdkReady ? '✅ Initialized' : '⏳ Loading...'}
           </span>
           {sdkInitTime && (
-            <span className={styles.statusTime}>
-              {new Date(sdkInitTime).toLocaleTimeString()}
-            </span>
+            <span className={styles.statusTime}>{new Date(sdkInitTime).toLocaleTimeString()}</span>
           )}
         </div>
 
         <div className={styles.statusItem}>
           <span className={styles.statusLabel}>Auth Status:</span>
-          <span className={`${styles.statusValue} ${isAuthenticated ? styles.success : styles.pending}`}>
+          <span
+            className={`${styles.statusValue} ${isAuthenticated ? styles.success : styles.pending}`}
+          >
             {isAuthenticated ? `✅ ${username || 'Logged In'}` : '❌ Not Authenticated'}
           </span>
         </div>
 
         <div className={styles.statusItem}>
           <span className={styles.statusLabel}>Environment:</span>
-          <span className={`${styles.statusValue} ${styles.info}`}>
-            🧪 Testnet Mode
-          </span>
+          <span className={`${styles.statusValue} ${styles.info}`}>🧪 Sandbox Mode</span>
         </div>
       </div>
 
@@ -115,22 +120,23 @@ export default function PaymentDiagnostics({
         <div className={styles.eventsSection}>
           <h4 className={styles.eventsTitle}>Payment Flow Events:</h4>
           <div className={styles.eventsList}>
-            {events.slice().reverse().map((event, index) => (
-              <div key={index} className={styles.event}>
-                <span className={styles.eventIcon}>{getEventIcon(event.type)}</span>
-                <div className={styles.eventContent}>
-                  <div className={styles.eventMessage}>{event.message}</div>
-                  <div className={styles.eventTime}>
-                    {new Date(event.timestamp).toLocaleTimeString()}
+            {events
+              .slice()
+              .reverse()
+              .map((event, index) => (
+                <div key={index} className={styles.event}>
+                  <span className={styles.eventIcon}>{getEventIcon(event.type)}</span>
+                  <div className={styles.eventContent}>
+                    <div className={styles.eventMessage}>{event.message}</div>
+                    <div className={styles.eventTime}>
+                      {new Date(event.timestamp).toLocaleTimeString()}
+                    </div>
+                    {!!event.data && (
+                      <pre className={styles.eventData}>{JSON.stringify(event.data, null, 2)}</pre>
+                    )}
                   </div>
-                  {!!event.data && (
-                    <pre className={styles.eventData}>
-                      {JSON.stringify(event.data, null, 2)}
-                    </pre>
-                  )}
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}

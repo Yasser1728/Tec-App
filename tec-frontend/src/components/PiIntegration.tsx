@@ -6,11 +6,32 @@ import { useTranslation } from '@/lib/i18n';
 import { useState } from 'react';
 import styles from './PiIntegration.module.css';
 
-type PaymentState = 'idle' | 'processing' | 'approving' | 'completing' | 'success' | 'error' | 'cancelled';
+type PaymentState =
+  | 'idle'
+  | 'processing'
+  | 'approving'
+  | 'completing'
+  | 'success'
+  | 'error'
+  | 'cancelled';
 
 export default function PiIntegration() {
-  const { user, isAuthenticated, isLoading, error: authError, errorType: authErrorType, login } = usePiAuth();
-  const { isProcessing, lastPayment, error: paymentError, errorType: paymentErrorType, testSDK, payDemoPi } = usePiPayment();
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+    error: authError,
+    errorType: authErrorType,
+    login,
+  } = usePiAuth();
+  const {
+    isProcessing,
+    lastPayment,
+    error: paymentError,
+    errorType: paymentErrorType,
+    testSDK,
+    payDemoPi,
+  } = usePiPayment();
   const { t } = useTranslation();
   const [paymentState, setPaymentState] = useState<PaymentState>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -30,7 +51,7 @@ export default function PiIntegration() {
     const available = testSDK();
     if (available) {
       console.log('✅ Pi SDK Test: PASSED');
-      console.log('🌐 Testnet Mode: Demo payments enabled');
+      console.log('🌐 Sandbox Mode: Demo payments enabled');
     } else {
       console.log('❌ Pi SDK Test: FAILED - SDK not available');
     }
@@ -40,17 +61,17 @@ export default function PiIntegration() {
     try {
       setPaymentState('processing');
       setErrorMessage('');
-      
+
       console.log('[PiIntegration] Starting demo payment...');
       const result = await payDemoPi();
-      
+
       console.log('[PiIntegration] Payment result:', result);
 
       if (!result) {
         setPaymentState('idle');
         return;
       }
-      
+
       if (result.success && result.status === 'completed') {
         setPaymentState('success');
       } else if (result.status === 'cancelled') {
@@ -62,9 +83,11 @@ export default function PiIntegration() {
     } catch (err) {
       console.error('[PiIntegration] Payment error:', err);
       setPaymentState('error');
-      
+
       // Use error from hook state if available for better context
-      const message = paymentError || (err instanceof Error ? err.message : 'حدث خطأ غير متوقع / Unexpected error occurred');
+      const message =
+        paymentError ||
+        (err instanceof Error ? err.message : 'حدث خطأ غير متوقع / Unexpected error occurred');
       setErrorMessage(message);
     }
   };
@@ -102,7 +125,8 @@ export default function PiIntegration() {
             <>
               <div>❌ {errorMessage}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                📱 يرجى فتح التطبيق داخل متصفح Pi Network<br/>
+                📱 يرجى فتح التطبيق داخل متصفح Pi Network
+                <br />
                 📱 Please open the app inside Pi Browser
               </div>
             </>
@@ -112,7 +136,8 @@ export default function PiIntegration() {
             <>
               <div>⏱️ {errorMessage}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى<br/>
+                🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى
+                <br />
                 🔄 Please check your internet connection and try again
               </div>
             </>
@@ -122,7 +147,8 @@ export default function PiIntegration() {
             <>
               <div>❌ {errorMessage}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                ⚠️ فشلت الموافقة على الدفع من الخادم<br/>
+                ⚠️ فشلت الموافقة على الدفع من الخادم
+                <br />
                 ⚠️ Server approval failed - payment may be incomplete
               </div>
             </>
@@ -131,7 +157,7 @@ export default function PiIntegration() {
           return <div>❌ {errorMessage}</div>;
       }
     }
-    
+
     // Check for auth errors
     if (authError && authErrorType) {
       switch (authErrorType) {
@@ -140,7 +166,8 @@ export default function PiIntegration() {
             <>
               <div>❌ {authError}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                📱 افتح تطبيق Pi Network → التطبيقات → TEC App<br/>
+                📱 افتح تطبيق Pi Network → التطبيقات → TEC App
+                <br />
                 📱 Open Pi Network app → Apps → TEC App
               </div>
             </>
@@ -150,7 +177,8 @@ export default function PiIntegration() {
             <>
               <div>⏱️ {authError}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى<br/>
+                🔄 يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى
+                <br />
                 🔄 Please check your internet connection and try again
               </div>
             </>
@@ -160,7 +188,8 @@ export default function PiIntegration() {
             <>
               <div>❌ {authError}</div>
               <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
-                🔒 يرجى تعطيل وضع التصفح الخاص<br/>
+                🔒 يرجى تعطيل وضع التصفح الخاص
+                <br />
                 🔒 Please disable private browsing mode
               </div>
             </>
@@ -169,25 +198,21 @@ export default function PiIntegration() {
           return <div>❌ {authError}</div>;
       }
     }
-    
+
     return <div>❌ {errorMessage}</div>;
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h3 className={styles.title}>
-          🌐 {t.dashboard.piIntegration.title}
-        </h3>
+        <h3 className={styles.title}>🌐 {t.dashboard.piIntegration.title}</h3>
 
         {/* Authentication Error */}
         {authError && (
           <div className={styles.error}>
-            <div className={styles.errorMessage}>
-              {getErrorMessageWithInstructions()}
-            </div>
-            <button 
-              className={`${styles.btn} ${styles.btnRetry}`} 
+            <div className={styles.errorMessage}>{getErrorMessageWithInstructions()}</div>
+            <button
+              className={`${styles.btn} ${styles.btnRetry}`}
               onClick={handleConnect}
               disabled={isLoading}
             >
@@ -198,8 +223,8 @@ export default function PiIntegration() {
 
         {/* Show Connect button when not authenticated and no error */}
         {!isAuthenticated && !authError && (
-          <button 
-            className={`${styles.btn} ${styles.btnConnect}`} 
+          <button
+            className={`${styles.btn} ${styles.btnConnect}`}
             onClick={handleConnect}
             disabled={isLoading}
           >
@@ -211,26 +236,28 @@ export default function PiIntegration() {
         {isAuthenticated && (
           <div className={styles.authenticated}>
             <span className={styles.checkmark}>✅</span>
-            <span>{t.dashboard.piIntegration.authenticated} <strong>@{user?.piUsername}</strong></span>
+            <span>
+              {t.dashboard.piIntegration.authenticated} <strong>@{user?.piUsername}</strong>
+            </span>
           </div>
         )}
 
-        {/* Always show the mainnet/testnet indicator */}
+        {/* Always show the sandbox/mainnet indicator */}
         <div className={styles.mainnetIndicator}>
-          🌐 {process.env.NEXT_PUBLIC_PI_SANDBOX === 'true' ? 'Testnet Mode: Demo payments' : 'Mainnet Mode: Real Pi payments'}
+          🌐{' '}
+          {process.env.NEXT_PUBLIC_PI_SANDBOX === 'true'
+            ? 'Sandbox Mode: Demo payments'
+            : 'Mainnet Mode: Real Pi payments'}
         </div>
 
         {/* Always show the button group - Test SDK works without auth */}
         <div className={styles.buttonGroup}>
-          <button 
-            className={`${styles.btn} ${styles.btnTest}`} 
-            onClick={handleTestSdk}
-          >
+          <button className={`${styles.btn} ${styles.btnTest}`} onClick={handleTestSdk}>
             🖊️ {t.dashboard.piIntegration.testSdk}
           </button>
 
-          <button 
-            className={`${styles.btn} ${styles.btnPay}`} 
+          <button
+            className={`${styles.btn} ${styles.btnPay}`}
             onClick={handlePayDemo}
             disabled={!isAuthenticated || isProcessing || paymentState === 'processing'}
           >
@@ -247,9 +274,7 @@ export default function PiIntegration() {
         {/* Payment Status Messages */}
         {paymentState === 'success' && lastPayment && (
           <div className={styles.success}>
-            <div className={styles.successMessage}>
-              ✅ {getPaymentStatusMessage()}
-            </div>
+            <div className={styles.successMessage}>✅ {getPaymentStatusMessage()}</div>
             {lastPayment.txid && (
               <div className={styles.txidInfo}>
                 <small>
@@ -268,26 +293,21 @@ export default function PiIntegration() {
         )}
 
         {paymentState === 'cancelled' && (
-          <div className={styles.warning}>
-            ⚠️ {getPaymentStatusMessage()}
-          </div>
+          <div className={styles.warning}>⚠️ {getPaymentStatusMessage()}</div>
         )}
 
         {paymentState === 'error' && (
           <div className={styles.error}>
-            <div className={styles.errorMessage}>
-              {getErrorMessageWithInstructions()}
-            </div>
-            <button 
-              className={`${styles.btn} ${styles.btnRetry}`} 
-              onClick={handleRetry}
-            >
+            <div className={styles.errorMessage}>{getErrorMessageWithInstructions()}</div>
+            <button className={`${styles.btn} ${styles.btnRetry}`} onClick={handleRetry}>
               🔄 إعادة المحاولة / Retry
             </button>
           </div>
         )}
 
-        {(paymentState === 'processing' || paymentState === 'approving' || paymentState === 'completing') && (
+        {(paymentState === 'processing' ||
+          paymentState === 'approving' ||
+          paymentState === 'completing') && (
           <div className={styles.processing}>
             <div className={styles.spinner}></div>
             <div>{getPaymentStatusMessage()}</div>
