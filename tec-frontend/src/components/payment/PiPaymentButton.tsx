@@ -29,13 +29,15 @@ export default function PiPaymentButton() {
       // @ts-ignore
       const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
       
-      if (authResult?.user?.uid) {
-        // 💡 التعديل هنا: إرسال البيانات بنفس الشكل اللي Auth Service متوقعاه في الـ Gateway
+      if (authResult?.user?.uid && authResult?.accessToken) {
+        // 💡 إرسال البيانات بالشكل الصحيح الذي ينتظره الباك-إند في TEC
         const res = await fetch('/api/auth/pi-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            authResult: authResult // بنبعت كل الـ authResult لأن الـ Gateway متوقعها
+            accessToken: authResult.accessToken,
+            piUsername: authResult.user.username,
+            piUid: authResult.user.uid
           }),
         });
         
@@ -45,14 +47,13 @@ export default function PiPaymentButton() {
 
         const data = await res.json();
         
-        // 💡 التعديل هنا: التعامل مع الرد سواء كان جوه `data.data.user` أو `data.user`
+        // استخراج بيانات ا��مستخدم حسب استجابة الـ TEC API Gateway
         const userData = data.user || (data.data && data.data.user);
         
-        if (userData) {
-          // توحيد اسم المتغيرات عشان لو الباك إند بيرجع piId بدل piUid
+        if (userData || data.tokens) {
           const safeUser = {
-            username: userData.username || userData.piUsername || userData.pi_username || authResult.user.username,
-            uid: userData.piUid || userData.piId || userData.pi_uid || authResult.user.uid
+            username: userData?.username || userData?.piUsername || authResult.user.username,
+            uid: userData?.piUid || userData?.piId || authResult.user.uid
           };
           
           setUser(safeUser);
@@ -61,6 +62,8 @@ export default function PiPaymentButton() {
         } else {
            throw new Error("Invalid response format from backend");
         }
+      } else {
+         throw new Error("Missing auth data from Pi Network");
       }
     } catch (error: any) {
       console.error("Auth Error:", error);
@@ -118,14 +121,13 @@ export default function PiPaymentButton() {
         className="bg-white p-8 rounded-2xl shadow-xl text-center text-black" 
         style={{ width: '100%', maxWidth: '400px', backgroundColor: '#ffffff' }}
       >
-        <h1 className="text-3xl font-bold mb-4" style={{ color: '#9333ea' }}>LIFE-APP UI</h1>
+        <h1 className="text-3xl font-bold mb-4" style={{ color: '#9333ea' }}>TEC-APP</h1>
 
         {!user ? (
           <>
             <p className="mb-8 font-semibold" style={{ color: '#4b5563' }}>
               Welcome to Pi Network Integration
             </p>
-            {/* زرار Connect مجبر على الستايل عشان ميبقاش صغير */}
             <button
               onClick={handleAuth}
               disabled={loading}
@@ -184,14 +186,14 @@ export default function PiPaymentButton() {
                 opacity: loading ? 0.7 : 1
               }}
             >
-              {loading ? 'Processing...' : 'Pay 1 Pi (Test)'}
+              {loading ? 'Processing...' : 'Pay 1 Pi = 0.1 TEC'}
             </button>
 
             {statusMsg && (
               <p style={{ 
                 marginTop: '16px', 
                 fontWeight: 'bold', 
-                color: statusMsg.includes('successful') ? '#16a34a' : '#4b5563' 
+                color: statusMsg.includes('successful') ? '#16a34a' : '#ef4444' 
               }}>
                 {statusMsg}
               </p>
@@ -201,4 +203,4 @@ export default function PiPaymentButton() {
       </div>
     </div>
   );
-                      }
+}
