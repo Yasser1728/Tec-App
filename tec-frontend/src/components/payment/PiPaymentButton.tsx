@@ -145,7 +145,7 @@ export default function PiPaymentButton() {
                 },
                 body: JSON.stringify({
                   payment_id: internalPaymentId,
-                  txid,
+                  transaction_id: txid,
                 }),
               });
 

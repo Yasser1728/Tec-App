@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
     if (!payment_id || !txid) {
       return NextResponse.json(
-        { error: 'Missing required fields: payment_id, txid' },
+        { error: 'Missing required fields: payment_id, txid (transaction_id)' },
         { status: 400 }
       );
     }
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
         'Content-Type': 'application/json',
         Authorization: authHeader,
       },
-      body: JSON.stringify({ payment_id, txid }),
+      body: JSON.stringify({ payment_id, transaction_id: txid }),
     });
 
     if (!response.ok) {

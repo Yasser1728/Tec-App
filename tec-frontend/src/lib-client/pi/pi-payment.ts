@@ -435,7 +435,7 @@ export const createU2APayment = async (
                   'Idempotency-Key': idempotencyKey,
                   ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify({ payment_id: internalId, txid }),
+                body: JSON.stringify({ payment_id: internalId, transaction_id: txid }),
               }
             );
 
