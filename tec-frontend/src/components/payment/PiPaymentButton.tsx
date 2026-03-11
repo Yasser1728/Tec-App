@@ -259,36 +259,23 @@ export default function PiPaymentButton() {
               onClick={handleAuth}
               disabled={loading}
               className="
-                w-full relative overflow-hidden
-                bg-gradient-to-r from-[#1a1208] via-[#2a1f0a] to-[#1a1208]
-                hover:from-[#2a1f0a] hover:via-[#3d2e10] hover:to-[#2a1f0a]
+                w-full
+                bg-gradient-to-b from-[#d4af37] to-[#b8882a]
+                hover:brightness-110
                 disabled:opacity-50 disabled:cursor-not-allowed
-                text-[#d4af37] font-semibold
-                py-4 px-6 rounded-2xl
-                transition-all duration-300
-                shadow-[0_0_20px_rgba(212,175,55,0.15)]
-                hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]
-                border border-[#d4af37]/30 hover:border-[#d4af37]/60
-                text-base tracking-widest uppercase
-                group
+                text-[#1a1208] font-bold
+                py-5 px-8 rounded-lg
+                transition duration-200
+                shadow-lg hover:shadow-xl
+                text-xl tracking-widest uppercase
               "
             >
-              {/* Shimmer overlay on hover */}
-              <span
-                className="
-                  absolute inset-0
-                  bg-gradient-to-r from-transparent via-[#d4af37]/8 to-transparent
-                  translate-x-[-100%] group-hover:translate-x-[100%]
-                  transition-transform duration-700
-                "
-              />
-
               {/* Button content */}
-              <span className="relative flex items-center justify-center gap-3">
+              <span className="flex items-center justify-center gap-3">
                 {loading ? (
                   <>
                     <svg
-                      className="animate-spin h-5 w-5 text-[#d4af37]"
+                      className="animate-spin h-5 w-5 text-[#1a1208]"
                       viewBox="0 0 24 24"
                       fill="none"
                       aria-hidden="true"
@@ -311,7 +298,7 @@ export default function PiPaymentButton() {
                   </>
                 ) : (
                   <>
-                    <span className="text-xl font-serif leading-none">π</span>
+                    <span className="text-2xl font-serif leading-none">π</span>
                     <span>SIGN IN WITH PI</span>
                   </>
                 )}
