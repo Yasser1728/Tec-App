@@ -159,6 +159,63 @@ describe('pi-payment - Idempotency-Key header', () => {
       expect(approveKey).toBe(completeKey);
     });
 
+    it('sends transaction_id (not txid) in /payments/complete request body', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
+        const urlStr = String(url);
+        if (urlStr.includes('/api/payments/create')) {
+          return Promise.resolve(
+            makeOkResponse({ data: { payment: { id: 'internal-id' } } }) as unknown as Response
+          );
+        }
+        if (urlStr.includes('/api/payments/approve')) {
+          return Promise.resolve(makeOkResponse({ success: true }) as unknown as Response);
+        }
+        if (urlStr.includes('/api/payments/complete')) {
+          return Promise.resolve(
+            makeOkResponse({
+              success: true,
+              paymentId: 'pi-pay-1',
+              txid: 'txid-abc12345',
+              status: 'completed',
+              amount: 1,
+              memo: 'Test',
+            }) as unknown as Response
+          );
+        }
+        return Promise.resolve(makeOkResponse({}) as unknown as Response);
+      });
+
+      const mockCreatePayment = vi.fn();
+      (window as unknown as Record<string, unknown>).__TEC_PI_READY = true;
+      (window as unknown as Record<string, unknown>).Pi = {
+        createPayment: mockCreatePayment,
+        authenticate: vi.fn(),
+        init: vi.fn(),
+      };
+
+      const paymentPromise = createU2APayment(1, 'Test');
+
+      await vi.waitFor(() => expect(mockCreatePayment).toHaveBeenCalled());
+
+      const callbacks = mockCreatePayment.mock.calls[0][1];
+
+      await callbacks.onReadyForServerApproval('pi-pay-1');
+      await callbacks.onReadyForServerCompletion('pi-pay-1', 'txid-abc12345');
+      await paymentPromise;
+
+      const completeCall = fetchSpy.mock.calls.find(([url]) =>
+        String(url).includes('/api/payments/complete')
+      );
+
+      expect(completeCall).toBeDefined();
+
+      const requestBody = JSON.parse(completeCall![1]?.body as string);
+      // Must use transaction_id (backend field name), not txid
+      expect(requestBody).toHaveProperty('transaction_id', 'txid-abc12345');
+      expect(requestBody).not.toHaveProperty('txid');
+      expect(requestBody).toHaveProperty('payment_id', 'internal-id');
+    });
+
     it('returns failure without calling Pi.createPayment when userId is set but backend record creation fails', async () => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         ok: false,

@@ -23,9 +23,84 @@ export const isPiBrowser = (): boolean => {
   return typeof window.Pi !== 'undefined' && typeof window.Pi.authenticate === 'function';
 };
 
-// Handle incomplete payments from previous sessions (no-op: /payments/incomplete endpoint not yet available)
+const resolveIncompletePayment = async (payment: unknown) => {
+  console.warn('[TEC Pi Auth] Incomplete payment detected:', payment);
+
+  const p = payment as {
+    identifier?: string;
+    status?: {
+      developer_approved?: boolean;
+      transaction_verified?: boolean;
+      developer_completed?: boolean;
+      cancelled?: boolean;
+    };
+    transaction?: { txid?: string } | null;
+  };
+
+  const piPaymentId = p?.identifier;
+  if (!piPaymentId) {
+    console.error('[TEC Pi Auth] Incomplete payment has no identifier, cannot resolve');
+    return;
+  }
+
+  const token = getAccessToken();
+  if (!token) {
+    console.warn('[TEC Pi Auth] No access token, cannot resolve incomplete payment');
+    return;
+  }
+
+  const gatewayUrl = process.env.NEXT_PUBLIC_API_GATEWAY_URL;
+  if (!gatewayUrl) {
+    console.warn('[TEC Pi Auth] No gateway URL configured, cannot resolve incomplete payment');
+    return;
+  }
+
+  try {
+    const isApproved = p?.status?.developer_approved === true;
+    const txid = p?.transaction?.txid;
+
+    if (isApproved && txid && !p?.status?.developer_completed) {
+      // Payment was approved and has a blockchain transaction but wasn't completed server-side.
+      // Attempt to complete it.
+      console.log('[TEC Pi Auth] Attempting to complete incomplete payment:', piPaymentId);
+      const res = await fetch(`${gatewayUrl}/api/payments/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          // Pi SDK only provides the Pi payment ID here; the backend looks up the internal
+          // payment record by its pi_payment_id column to resolve the completion.
+          payment_id: piPaymentId,
+          transaction_id: txid,
+        }),
+      });
+      if (res.ok) {
+        console.log('[TEC Pi Auth] Incomplete payment completed successfully');
+      } else {
+        console.warn('[TEC Pi Auth] Failed to complete incomplete payment:', res.status);
+      }
+    } else if (!p?.status?.cancelled) {
+      // Payment is not completed and not cancelled — log warning.
+      // No cancel-by-pi-payment-id endpoint exists yet; Pi SDK will eventually expire it.
+      console.log(
+        '[TEC Pi Auth] Incomplete payment not yet approved or already cancelled:',
+        piPaymentId
+      );
+      console.warn(
+        '[TEC Pi Auth] Cannot cancel incomplete payment programmatically — Pi SDK will expire it'
+      );
+    }
+  } catch (err) {
+    console.error('[TEC Pi Auth] Error handling incomplete payment:', err);
+  }
+};
+
+// Handle incomplete payments from previous sessions.
+// Pi SDK callback must be synchronous; async resolution runs as fire-and-forget.
 const handleIncompletePayment = (payment: unknown) => {
-  console.warn('Incomplete payment detected (no action taken):', payment);
+  void resolveIncompletePayment(payment);
 };
 
 /**
