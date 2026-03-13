@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { loginWithPi, getAccessToken } from '@/lib-client/pi/pi-auth';
 import { createA2UPayment } from '@/lib-client/pi/pi-payment';
 import type { TecUser } from '@/types/pi.types';
@@ -12,6 +13,7 @@ const gatewayUrl = process.env.NEXT_PUBLIC_API_GATEWAY_URL;
 const missingEnvVars = isSandboxMode && (!appId || !gatewayUrl);
 
 export default function PiPaymentButton() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<TecUser | null>(null);
   const [balance, setBalance] = useState<number | string>('...');
@@ -45,6 +47,7 @@ export default function PiPaymentButton() {
 
       setUser(authData.user);
       fetchBalance(authData.user.id);
+      router.push('/pi-payment');
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Authentication failed / فشل تسجيل الدخول';
@@ -264,10 +267,12 @@ export default function PiPaymentButton() {
                 hover:brightness-110
                 disabled:opacity-50 disabled:cursor-not-allowed
                 text-[#1a1208] font-bold
-                py-5 px-8 rounded-lg
+                py-6 px-10 rounded-xl
                 transition duration-200
-                shadow-lg hover:shadow-xl
-                text-xl tracking-widest uppercase
+                shadow-xl hover:shadow-2xl
+                text-2xl tracking-widest uppercase
+                border-2 border-[#e8d5a3]/40
+                min-w-[340px]
               "
             >
               {/* Button content */}
@@ -298,7 +303,7 @@ export default function PiPaymentButton() {
                   </>
                 ) : (
                   <>
-                    <span className="text-2xl font-serif leading-none">π</span>
+                    <span className="text-3xl font-serif leading-none">π</span>
                     <span>SIGN IN WITH PI</span>
                   </>
                 )}
