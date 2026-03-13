@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { loginWithPi, getAccessToken } from '@/lib-client/pi/pi-auth';
+import { loginWithPi, getAccessToken, resolvePendingPayment } from '@/lib-client/pi/pi-auth';
 import { createA2UPayment } from '@/lib-client/pi/pi-payment';
 import type { TecUser } from '@/types/pi.types';
 
@@ -174,9 +174,42 @@ export default function PiPaymentButton() {
             setLoading(false);
           },
 
-          onError: (error: Error) => {
+          onError: async (error: Error, payment?: unknown) => {
             console.error('[TEC Payment] Pi SDK error:', error);
-            setError('Payment error. Please try again. / حدث خطأ، يرجى المحاولة مرة أخرى.');
+
+            // Detect "pending payment" error from Pi SDK
+            const msg = error?.message ?? '';
+            const isPendingError =
+              msg.toLowerCase().includes('pending') || msg.toLowerCase().includes('already have');
+
+            if (isPendingError) {
+              const pendingPaymentId = (payment as { identifier?: string } | undefined)?.identifier;
+
+              if (pendingPaymentId) {
+                setInfo(
+                  '⏳ Resolving pending payment... / جاري حل الدفعة المعلقة، يرجى الانتظار...'
+                );
+                const result = await resolvePendingPayment(pendingPaymentId);
+                if (result) {
+                  setInfo(
+                    `✅ Pending payment resolved. Please tap Pay again.\n` +
+                      `تم حل الدفعة المعلقة (${result.action}). اضغط على الدفع مجدداً.`
+                  );
+                } else {
+                  setError(
+                    '❌ Failed to resolve pending payment. Please try again later.\n' +
+                      'فشل حل الدفعة المعلقة. يرجى المحاولة مرة أخرى.'
+                  );
+                }
+              } else {
+                setError(
+                  '⚠️ A pending payment was detected. Please try again in a few moments.\n' +
+                    'تم اكتشاف دفعة معلقة. يرجى المحاولة مرة أخرى بعد قليل.'
+                );
+              }
+            } else {
+              setError('Payment error. Please try again. / حدث خطأ، يرجى المحاولة مرة أخرى.');
+            }
             setLoading(false);
           },
         }
@@ -325,10 +358,21 @@ export default function PiPaymentButton() {
 
             {/* User info card */}
             <div className="bg-gray-900/60 p-4 rounded-2xl text-sm text-left border border-[#d4af37]/20 backdrop-blur-sm">
-              <p className="text-gray-400 mb-2">
-                <span className="text-gray-200 font-medium">User ID: </span>
-                <span className="text-xs break-all text-gray-400">{user.id}</span>
+              <p className="text-gray-400 mb-1">
+                <span className="text-gray-200 font-medium">Username: </span>
+                <span className="text-[#d4af37] font-semibold">@{user.piUsername}</span>
               </p>
+              <p className="text-gray-400 mb-1">
+                <span className="text-gray-200 font-medium">UID: </span>
+                {/* piId is the Pi Network user ID; id is the internal TEC backend UUID */}
+                <span className="text-xs break-all text-gray-400">{user.piId}</span>
+              </p>
+              {user.role && (
+                <p className="text-gray-400 mb-1">
+                  <span className="text-gray-200 font-medium">Role: </span>
+                  <span className="text-xs text-blue-400 uppercase">{user.role}</span>
+                </p>
+              )}
               <p className="text-gray-400">
                 <span className="text-gray-200 font-medium">TEC Balance: </span>
                 <span className="font-bold text-lg text-[#d4af37] ml-1">{balance} TEC</span>
@@ -388,7 +432,7 @@ export default function PiPaymentButton() {
                     <span>Processing...</span>
                   </>
                 ) : (
-                  <span>Pay 1 π = 0.1 TEC</span>
+                  <span>Pay 1 Pi (Test)</span>
                 )}
               </span>
             </button>
@@ -420,7 +464,7 @@ export default function PiPaymentButton() {
               />
               <span className="relative flex items-center justify-center gap-2">
                 <span className="text-xl font-serif leading-none">π</span>
-                <span>A2U Transfer</span>
+                <span>Receive 0.1 Test-Pi (A2U)</span>
               </span>
             </button>
 
