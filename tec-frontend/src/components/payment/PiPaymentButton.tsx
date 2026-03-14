@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { loginWithPi, getAccessToken, resolvePendingPayment } from '@/lib-client/pi/pi-auth';
+import { loginWithPi, getAccessToken, resolvePendingPayment, fetchWithAuth } from '@/lib-client/pi/pi-auth';
 import { createA2UPayment } from '@/lib-client/pi/pi-payment';
 import type { TecUser } from '@/types/pi.types';
 
@@ -47,7 +47,7 @@ export default function PiPaymentButton() {
       fetchBalance(authData.user.id);
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : 'Authentication failed / فشل تسجيل الدخول';
+        error instanceof Error ? error.message : 'Authentication failed';
       setError(message);
     } finally {
       setLoading(false);
@@ -61,9 +61,7 @@ export default function PiPaymentButton() {
 
     const token = getAccessToken();
     if (!token) {
-      setError(
-        'Session expired. Please reconnect your wallet. / انتهت الجلسة، يرجى إعادة الاتصال.'
-      );
+      setError('Session expired. Please sign in again.');
       setUser(null);
       setBalance('...');
       return;
@@ -71,15 +69,11 @@ export default function PiPaymentButton() {
 
     try {
       setLoading(true);
-      setInfo('Processing payment... / جاري معالجة الدفع...');
+      setInfo('Processing payment...');
 
       // Create an internal payment record first to get a backend UUID
-      const createRes = await fetch('/api/payment/create', {
+      const createRes = await fetchWithAuth('/api/payment/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({
           userId: user.id,
           amount: 1,
@@ -91,14 +85,14 @@ export default function PiPaymentButton() {
 
       if (!createRes.ok) {
         const err = await createRes.json().catch(() => ({}));
-        throw new Error(err?.error?.message || 'Failed to initiate payment / فشل بدء عملية الدفع');
+        throw new Error(err?.error?.message || 'Failed to initiate payment');
       }
 
       const createData = await createRes.json();
       const internalPaymentId: string = createData?.data?.payment?.id ?? createData?.data?.id;
 
       if (!internalPaymentId) {
-        throw new Error('Invalid payment response from server / استجابة غير صالحة من الخادم');
+        throw new Error('Invalid payment response from server');
       }
 
       // Open Pi Network payment dialog
@@ -113,12 +107,8 @@ export default function PiPaymentButton() {
           // ── Approval callback (Step 2) ────────────────────────────────────
           onReadyForServerApproval: async (piPaymentId: string) => {
             try {
-              const approveRes = await fetch('/api/payment/approve', {
+              const approveRes = await fetchWithAuth('/api/payment/approve', {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                   payment_id: internalPaymentId,
                   pi_payment_id: piPaymentId,
@@ -137,12 +127,8 @@ export default function PiPaymentButton() {
           // ── Completion callback (Step 3) ──────────────────────────────────
           onReadyForServerCompletion: async (piPaymentId: string, txid: string) => {
             try {
-              const completeRes = await fetch('/api/payment/complete', {
+              const completeRes = await fetchWithAuth('/api/payment/complete', {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                   payment_id: internalPaymentId,
                   transaction_id: txid,
@@ -150,34 +136,29 @@ export default function PiPaymentButton() {
               });
 
               if (completeRes.ok) {
-                setInfo('Payment successful! Balance updated. / تمت عملية الدفع بنجاح!');
+                setInfo('Payment successful! Balance updated.');
                 setTimeout(() => fetchBalance(user.id), 2000);
               } else {
                 const err = await completeRes.json().catch(() => ({}));
                 console.error('[TEC Payment] Completion failed:', err);
-                setError(
-                  'Payment completion failed. Please contact support. / فشل إتمام الدفع، تواصل مع الدعم.'
-                );
+                setError('Payment completion failed. Please contact support.');
               }
             } catch (err) {
               console.error('[TEC Payment] Completion request error:', err);
-              setError(
-                'Network error during payment completion. / خطأ في الشبكة أثناء إتمام الدفع.'
-              );
+              setError('Network error during payment completion.');
             } finally {
               setLoading(false);
             }
           },
 
           onCancel: (_piPaymentId: string) => {
-            setError('Payment cancelled. / تم إلغاء الدفع.');
+            setError('Payment cancelled.');
             setLoading(false);
           },
 
           onError: async (error: Error, payment?: unknown) => {
             console.error('[TEC Payment] Pi SDK error:', error);
 
-            // Detect "pending payment" error from Pi SDK
             const msg = error?.message ?? '';
             const isPendingError =
               msg.toLowerCase().includes('pending') || msg.toLowerCase().includes('already have');
@@ -186,36 +167,25 @@ export default function PiPaymentButton() {
               const pendingPaymentId = (payment as { identifier?: string } | undefined)?.identifier;
 
               if (pendingPaymentId) {
-                setInfo(
-                  '⏳ Resolving pending payment... / جاري حل الدفعة المعلقة، يرجى الانتظار...'
-                );
+                setInfo('Resolving pending payment, please wait...');
                 const result = await resolvePendingPayment(pendingPaymentId);
                 if (result) {
-                  setInfo(
-                    `✅ Pending payment resolved. Please tap Pay again.\n` +
-                      `تم حل الدفعة المعلقة (${result.action}). اضغط على الدفع مجدداً.`
-                  );
+                  setInfo(`Pending payment resolved (${result.action}). Please tap Pay again.`);
                 } else {
-                  setError(
-                    '❌ Failed to resolve pending payment. Please try again later.\n' +
-                      'فشل حل الدفعة المعلقة. يرجى المحاولة مرة أخرى.'
-                  );
+                  setError('Failed to resolve pending payment. Please try again later.');
                 }
               } else {
-                setError(
-                  '⚠️ A pending payment was detected. Please try again in a few moments.\n' +
-                    'تم اكتشاف دفعة معلقة. يرجى المحاولة مرة أخرى بعد قليل.'
-                );
+                setError('A pending payment was detected. Please try again in a few moments.');
               }
             } else {
-              setError('Payment error. Please try again. / حدث خطأ، يرجى المحاولة مرة أخرى.');
+              setError('Payment error. Please try again.');
             }
             setLoading(false);
           },
         }
       );
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Payment failed / فشل الدفع';
+      const message = error instanceof Error ? error.message : 'Payment failed';
       setError(message);
       setLoading(false);
     }
@@ -227,36 +197,34 @@ export default function PiPaymentButton() {
     if (!user) return;
     setA2uMsg(null);
 
-    // In Sandbox mode the A2U endpoint is not yet available
     if (isSandboxMode) {
-      setA2uMsg({ text: 'ℹ️ A2U is not available in Sandbox mode yet.', isError: false });
+      setA2uMsg({ text: 'A2U is not available in Sandbox mode yet.', isError: false });
       return;
     }
 
     const token = getAccessToken();
     if (!token) {
-      setA2uMsg({ text: 'Session expired. Please reconnect. / انتهت الجلسة.', isError: true });
+      setA2uMsg({ text: 'Session expired. Please sign in again.', isError: true });
       return;
     }
 
     try {
-      setA2uMsg({ text: 'Processing A2U payment… / جاري معالجة الدفعة...', isError: false });
+      setA2uMsg({ text: 'Processing A2U payment...', isError: false });
       await createA2UPayment({
         recipientUid: user.piId,
         amount: 0.001,
         memo: 'TEC A2U reward',
         metadata: { userId: user.id },
       });
-      setA2uMsg({ text: 'A2U payment sent! / تم إرسال الدفعة!', isError: false });
+      setA2uMsg({ text: 'A2U payment sent!', isError: false });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'A2U payment failed / فشل الدفع';
+      const msg = err instanceof Error ? err.message : 'A2U payment failed';
       setA2uMsg({ text: msg, isError: true });
     }
   }, [user]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  // Startup diagnostics: missing required env vars in Sandbox mode
   if (missingEnvVars) {
     const missing: string[] = [];
     if (!appId) missing.push('NEXT_PUBLIC_PI_APP_ID');
@@ -274,8 +242,7 @@ export default function PiPaymentButton() {
             ))}
           </ul>
           <p className="text-yellow-400/70 text-xs">
-            Add these variables to your production environment configuration and redeploy. Connect
-            and Pay actions are disabled until they are set.
+            Add these variables to your production environment configuration and redeploy.
           </p>
         </div>
       </div>
@@ -287,7 +254,6 @@ export default function PiPaymentButton() {
       <div className="w-full max-w-md text-center">
         {!user ? (
           <>
-            {/* Sign in with Pi — TEC gold/dark design */}
             <button
               onClick={handleAuth}
               disabled={loading}
@@ -303,7 +269,6 @@ export default function PiPaymentButton() {
                 text-xl tracking-widest uppercase
               "
             >
-              {/* Button content */}
               <span className="flex items-center justify-center gap-3">
                 {loading ? (
                   <>
@@ -338,7 +303,6 @@ export default function PiPaymentButton() {
               </span>
             </button>
 
-            {/* Error / info message */}
             {statusMsg && (
               <p
                 className={`mt-4 text-sm font-medium leading-relaxed whitespace-pre-line ${
@@ -351,21 +315,18 @@ export default function PiPaymentButton() {
           </>
         ) : (
           <div className="flex flex-col gap-4">
-            {/* Welcome message */}
             <p className="text-[#d4af37] font-semibold text-lg tracking-wide">
               Welcome, @{user.piUsername}!
             </p>
 
-            {/* User info card */}
             <div className="bg-gray-900/60 p-4 rounded-2xl text-sm text-left border border-[#d4af37]/20 backdrop-blur-sm">
               <p className="text-gray-400 mb-1">
                 <span className="text-gray-200 font-medium">Username: </span>
                 <span className="text-[#d4af37] font-semibold">@{user.piUsername}</span>
               </p>
               <p className="text-gray-400 mb-1">
-                <span className="text-gray-200 font-medium">UID: </span>
-                {/* piId is the Pi Network user ID; id is the internal TEC backend UUID */}
-                <span className="text-xs break-all text-gray-400">{user.piId}</span>
+                <span className="text-gray-200 font-medium">User ID: </span>
+                <span className="text-xs break-all text-gray-400">{user.id}</span>
               </p>
               {user.role && (
                 <p className="text-gray-400 mb-1">
@@ -379,7 +340,6 @@ export default function PiPaymentButton() {
               </p>
             </div>
 
-            {/* Pay button */}
             <button
               onClick={handlePayment}
               disabled={loading}
@@ -437,7 +397,6 @@ export default function PiPaymentButton() {
               </span>
             </button>
 
-            {/* A2U button */}
             <button
               onClick={handleA2U}
               className="
@@ -468,7 +427,6 @@ export default function PiPaymentButton() {
               </span>
             </button>
 
-            {/* A2U status message */}
             {a2uMsg && (
               <p
                 className={`text-sm font-medium leading-relaxed whitespace-pre-line ${
@@ -479,7 +437,6 @@ export default function PiPaymentButton() {
               </p>
             )}
 
-            {/* Status message */}
             {statusMsg && (
               <p
                 className={`mt-2 text-sm font-medium leading-relaxed whitespace-pre-line ${
