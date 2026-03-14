@@ -41,3 +41,11 @@ export async function POST(request: Request) {
         { status: response.status }
       );
     }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error: unknown) {
+    console.error('[Payment Approve Route] Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
