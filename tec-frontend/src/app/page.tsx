@@ -231,7 +231,10 @@ export default function HomePage() {
           <div className={styles.noResults}>
             <span>🔍</span>
             <p>{dir === 'rtl' ? 'لا توجد نتائج' : 'No apps found'}</p>
-            <button className={styles.noResultsBtn} onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}>
+            <button
+              className={styles.noResultsBtn}
+              onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}
+            >
               {dir === 'rtl' ? 'مسح البحث' : 'Clear search'}
             </button>
           </div>
