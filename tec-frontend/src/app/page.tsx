@@ -53,11 +53,27 @@ const CATEGORY_COLORS: Record<string, string> = {
 export default function HomePage() {
   const { t, dir } = useTranslation();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const filteredApps = useMemo(() => {
-    if (activeCategory === 'All') return APPS;
-    return APPS.filter(app => app.category === activeCategory);
-  }, [activeCategory]);
+    let result = APPS;
+
+    if (activeCategory !== 'All') {
+      result = result.filter(app => app.category === activeCategory);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(app =>
+        app.name.toLowerCase().includes(q) ||
+        app.domain.toLowerCase().includes(q) ||
+        app.category.toLowerCase().includes(q) ||
+        (t.apps[app.name as keyof typeof t.apps] ?? '').toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [activeCategory, searchQuery, t.apps]);
 
   const openApp = (domain: string) =>
     window.open(`https://${domain}`, '_blank', 'noopener,noreferrer');
@@ -157,9 +173,7 @@ export default function HomePage() {
         <div className={styles.featuredCard}>
           <span className={styles.featuredEmoji}>🌐</span>
           <h2 className={styles.featuredTitle}>TEC Nexus</h2>
-          <p className={styles.featuredDesc}>
-            {t.apps.Nexus}
-          </p>
+          <p className={styles.featuredDesc}>{t.apps.Nexus}</p>
           <button className={styles.featuredBtn} onClick={() => openApp('nexus.pi')}>
             {dir === 'rtl' ? 'استكشف Nexus ←' : 'Explore Nexus →'}
           </button>
@@ -174,9 +188,29 @@ export default function HomePage() {
             {t.home.ecosystemTitle.split('—')[0]}—{' '}
             <span className={styles.goldText}>{t.home.ecosystemTitle.split('—')[1]}</span>
           </h2>
-          <p className={styles.sectionDesc}>
-            {t.home.description}
-          </p>
+          <p className={styles.sectionDesc}>{t.home.description}</p>
+        </div>
+
+        {/* Search */}
+        <div className={styles.searchWrap}>
+          <span className={styles.searchIcon}>🔍</span>
+          <input
+            className={styles.searchInput}
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={dir === 'rtl' ? 'ابحث عن تطبيق...' : 'Search apps...'}
+            aria-label="Search apps"
+          />
+          {searchQuery && (
+            <button
+              className={styles.searchClear}
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
         </div>
 
         {/* Category Filter */}
@@ -193,41 +227,51 @@ export default function HomePage() {
         </div>
 
         {/* Apps Grid */}
-        <div className={styles.appsGrid}>
-          {filteredApps.map((app, i) => (
-            <div
-              key={app.name}
-              className={styles.appCard}
-              style={{
-                animationDelay: `${i * 0.05}s`,
-                '--cat-color': CATEGORY_COLORS[app.category] ?? '#d4af37',
-              } as React.CSSProperties}
-              onClick={(e) => { createRipple(e); openApp(app.domain); }}
-              onKeyDown={(e) => handleKey(e, app.domain)}
-              role="button"
-              tabIndex={0}
-            >
-              <div className={styles.appCardGlow} />
-              <div className={styles.appCardTop}>
-                <span className={styles.appEmoji}>{app.emoji}</span>
-                <span
-                  className={styles.appCategory}
-                  style={{ color: CATEGORY_COLORS[app.category] ?? '#d4af37' }}
-                >
-                  {app.category}
+        {filteredApps.length === 0 ? (
+          <div className={styles.noResults}>
+            <span>🔍</span>
+            <p>{dir === 'rtl' ? 'لا توجد نتائج' : 'No apps found'}</p>
+            <button className={styles.noResultsBtn} onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}>
+              {dir === 'rtl' ? 'مسح البحث' : 'Clear search'}
+            </button>
+          </div>
+        ) : (
+          <div className={styles.appsGrid}>
+            {filteredApps.map((app, i) => (
+              <div
+                key={app.name}
+                className={styles.appCard}
+                style={{
+                  animationDelay: `${i * 0.05}s`,
+                  '--cat-color': CATEGORY_COLORS[app.category] ?? '#d4af37',
+                } as React.CSSProperties}
+                onClick={(e) => { createRipple(e); openApp(app.domain); }}
+                onKeyDown={(e) => handleKey(e, app.domain)}
+                role="button"
+                tabIndex={0}
+              >
+                <div className={styles.appCardGlow} />
+                <div className={styles.appCardTop}>
+                  <span className={styles.appEmoji}>{app.emoji}</span>
+                  <span
+                    className={styles.appCategory}
+                    style={{ color: CATEGORY_COLORS[app.category] ?? '#d4af37' }}
+                  >
+                    {app.category}
+                  </span>
+                </div>
+                <span className={styles.appName}>{app.name}</span>
+                <span className={styles.appDesc}>
+                  {t.apps[app.name as keyof typeof t.apps] ?? app.name}
                 </span>
+                <div className={styles.appFooter}>
+                  <span className={styles.appDomain}>{app.domain}</span>
+                  <span className={styles.appArrow}>{dir === 'rtl' ? '←' : '→'}</span>
+                </div>
               </div>
-              <span className={styles.appName}>{app.name}</span>
-              <span className={styles.appDesc}>
-                {t.apps[app.name as keyof typeof t.apps] ?? app.name}
-              </span>
-              <div className={styles.appFooter}>
-                <span className={styles.appDomain}>{app.domain}</span>
-                <span className={styles.appArrow}>{dir === 'rtl' ? '←' : '→'}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <p className={styles.appCount}>{filteredApps.length} {t.home.stats.apps}</p>
       </section>
