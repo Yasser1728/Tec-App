@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import PiPaymentButton from '@/components/payment/PiPaymentButton';
@@ -57,11 +58,9 @@ export default function HomePage() {
 
   const filteredApps = useMemo(() => {
     let result = APPS;
-
     if (activeCategory !== 'All') {
       result = result.filter(app => app.category === activeCategory);
     }
-
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(app =>
@@ -71,7 +70,6 @@ export default function HomePage() {
         (t.apps[app.name as keyof typeof t.apps] ?? '').toLowerCase().includes(q)
       );
     }
-
     return result;
   }, [activeCategory, searchQuery, t.apps]);
 
@@ -119,6 +117,9 @@ export default function HomePage() {
         <div className={styles.navLinks}>
           <a href="#ecosystem" className={styles.navLink}>{t.home.ecosystem}</a>
           <a href="#payment" className={styles.navLink}>{t.common.login}</a>
+          <Link href="/ai" className={styles.navAiLink}>
+            🤖 {dir === 'rtl' ? 'المساعد' : 'Assistant'}
+          </Link>
         </div>
         <div className={styles.navRight}>
           <LanguageSwitcher />
@@ -291,6 +292,12 @@ export default function HomePage() {
           <a href="/terms" className={styles.footerLink}>Terms</a>
         </div>
       </footer>
+
+      {/* Floating AI Button */}
+      <Link href="/ai" className={styles.floatingAi} aria-label="TEC Assistant">
+        <span className={styles.floatingAiIcon}>🤖</span>
+        <span className={styles.floatingAiPulse} />
+      </Link>
 
     </main>
   );
