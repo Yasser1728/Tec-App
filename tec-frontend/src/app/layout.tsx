@@ -5,6 +5,7 @@ import { ClientProviders } from '@/components/ClientProviders';
 import PiSdkLoader from '@/components/PiSdkLoader';
 import { BackendOfflineBanner } from '@/components/BackendOfflineBanner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import type { Metadata } from 'next';
 
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
@@ -21,9 +22,60 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
-export const metadata = {
-  title: 'TEC App — The Elite Consortium',
-  description: 'A complete ecosystem of 24 apps built on Pi Network',
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tec-app.vercel.app';
+
+export const metadata: Metadata = {
+  title: {
+    default: 'TEC — The Elite Consortium',
+    template: '%s | TEC',
+  },
+  description: 'A complete ecosystem of 24 sovereign apps built on Pi Network. One identity. One wallet. One world.',
+  keywords: ['TEC', 'The Elite Consortium', 'Pi Network', 'Pi', 'crypto', 'blockchain', 'ecosystem', '24 apps'],
+  authors: [{ name: 'The Elite Consortium', url: APP_URL }],
+  creator: 'The Elite Consortium',
+  publisher: 'The Elite Consortium',
+  metadataBase: new URL(APP_URL),
+
+  openGraph: {
+    type: 'website',
+    url: APP_URL,
+    siteName: 'TEC — The Elite Consortium',
+    title: 'TEC — The Elite Consortium',
+    description: 'A complete ecosystem of 24 sovereign apps built on Pi Network. One identity. One wallet. One world.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'TEC — The Elite Consortium',
+      },
+    ],
+    locale: 'en_US',
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TEC — The Elite Consortium',
+    description: 'A complete ecosystem of 24 sovereign apps built on Pi Network.',
+    images: ['/og-image.png'],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+    },
+  },
+
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+
+  manifest: '/manifest.json',
 };
 
 const piSandbox = process.env.NEXT_PUBLIC_PI_SANDBOX !== 'false';
