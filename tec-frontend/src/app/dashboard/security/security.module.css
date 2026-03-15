@@ -1,295 +1,61 @@
-.container {
-  padding: 32px;
-  max-width: 900px;
-  margin: 0 auto;
-}
 
-.header {
-  margin-bottom: 48px;
-}
-
-.title {
-  font-size: 36px;
-  font-weight: 300;
-  margin-bottom: 8px;
-  color: var(--white);
-}
-
-.subtitle {
-  font-size: 16px;
-  color: var(--muted);
-}
-
-.section {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 32px;
-  margin-bottom: 24px;
-}
-
-.sectionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.sectionTitle {
-  font-size: 20px;
-  font-weight: 300;
-  margin-bottom: 4px;
-  color: var(--white);
-}
-
-.sectionDescription {
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.toggle {
+/* ── Security Banner ── */
+.securityBanner {
   display: flex;
   align-items: center;
-}
-
-.toggleInput {
-  display: none;
-}
-
-.toggleLabel {
-  width: 56px;
-  height: 32px;
-  background: var(--dark);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.toggleSlider {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 22px;
-  height: 22px;
-  background: var(--muted);
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.toggleInput:checked + .toggleLabel {
-  background: var(--gold-dim);
-  border-color: var(--gold);
-}
-
-.toggleInput:checked + .toggleLabel .toggleSlider {
-  transform: translateX(24px);
-  background: var(--gold);
-}
-
-.qrSection {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-}
-
-.qrBox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.qrPlaceholder {
-  width: 200px;
-  height: 200px;
-  background: var(--dark);
-  border: 2px dashed var(--border);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 24px;
-}
-
-.qrText {
-  font-size: 16px;
-  color: var(--white);
-  margin-bottom: 8px;
-}
-
-.qrHint {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.verifyBox {
-  display: flex;
-  flex-direction: column;
   gap: 16px;
+  padding: 20px 24px;
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 12px;
+  margin-bottom: 24px;
 }
-
-.label {
-  font-size: 14px;
-  color: var(--white);
-}
-
-.input {
-  padding: 12px 16px;
-  background: var(--dark);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--white);
-  font-size: 16px;
-  text-align: center;
-  letter-spacing: 8px;
-  font-family: monospace;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--gold-dim);
-}
-
-.verifyBtn {
-  padding: 12px 24px;
+.bannerIcon { font-size: 28px; flex-shrink: 0; }
+.bannerText { flex: 1; }
+.bannerTitle { font-size: 15px; color: var(--white); font-weight: 500; margin-bottom: 4px; }
+.bannerSub { font-size: 13px; color: var(--muted); }
+.bannerBtn {
+  padding: 10px 20px;
   background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  border: none;
-  border-radius: 8px;
-  color: var(--black);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  border: none; border-radius: 8px;
+  color: var(--black); font-size: 13px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: opacity 0.2s;
 }
+.bannerBtn:hover { opacity: 0.85; }
 
-.verifyBtn:hover {
-  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
-}
+/* ── Steps ── */
+.steps { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.stepItem { font-size: 13px; color: var(--muted); }
 
-.backupCodes {
-  margin-top: 24px;
-  padding-top: 24px;
+/* ── PIN Section ── */
+.pinSection {
+  margin-top: 24px; padding-top: 24px;
   border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 16px;
 }
+.pinTitle { font-size: 18px; color: var(--white); font-weight: 400; }
+.pinDesc { font-size: 13px; color: var(--muted); }
+.pinFields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
-.codesTitle {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: var(--white);
+/* ── Error ── */
+.error { font-size: 13px; color: var(--error); }
+
+/* ── Done Section ── */
+.doneSection {
+  margin-top: 24px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; text-align: center;
 }
+.doneIcon { font-size: 48px; }
+.doneTitle { font-size: 18px; color: var(--white); font-weight: 500; }
+.doneSub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
 
-.codesDescription {
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 16px;
-}
-
-.codesGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.code {
-  padding: 12px;
-  background: var(--dark);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  text-align: center;
-  font-family: monospace;
-  font-size: 14px;
-  color: var(--gold);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.listItem {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: var(--dark);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.listItem:hover {
-  border-color: var(--gold-dim);
-}
-
-.itemIcon {
-  font-size: 24px;
-}
-
-.itemContent {
-  flex: 1;
-}
-
-.itemTitle {
-  font-size: 16px;
-  color: var(--white);
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.currentBadge {
-  padding: 4px 8px;
-  background: rgba(46, 204, 113, 0.2);
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--success);
-  font-weight: 500;
-}
-
-.itemMeta {
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.revokeBtn,
-.removeBtn {
-  padding: 8px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--white);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.revokeBtn:hover,
-.removeBtn:hover {
-  border-color: var(--error);
-  color: var(--error);
-}
-
-.changePasswordBtn {
-  padding: 12px 24px;
-  background: var(--dark);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--white);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.changePasswordBtn:hover {
-  border-color: var(--gold-dim);
-  background: var(--surface);
+@media (max-width: 600px) {
+  .container { padding: 20px 16px; }
+  .qrSection { grid-template-columns: 1fr; }
+  .pinFields { grid-template-columns: 1fr; }
+  .securityBanner { flex-direction: column; text-align: center; }
+  .codesGrid { grid-template-columns: repeat(2, 1fr); }
 }
